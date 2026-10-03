@@ -40,6 +40,7 @@ export default function SignUpScreen({ onVolverLogin }) {
     }
 
     alert('¡Cuenta creada con éxito!');
+    console.log(formData);
     if (onVolverLogin) {
       onVolverLogin();
     }

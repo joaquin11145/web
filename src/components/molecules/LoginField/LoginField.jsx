@@ -43,10 +43,6 @@ export default function LoginField({
         value={value}
         onChange={onChange}
         type={isPassword ? (showPassword ? 'text' : 'password') : type}
-        inputProps={{
-          maxLength,
-          autoComplete: isPassword ? 'new-password' : 'off',
-        }}
         sx={{
           width: '100%',
           '& .MuiOutlinedInput-root': {

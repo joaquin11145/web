@@ -26,7 +26,8 @@ const theme = createTheme({
 export default function App() {
   const navigate = useNavigate();
 
-  const handleLogin = (rut, password) => {
+  const handleLogin = (rut, password, recuerdame) => {
+    console.log({ rut, password, recuerdame });
     navigate('/comprador');
   };
 

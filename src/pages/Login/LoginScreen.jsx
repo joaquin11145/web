@@ -21,7 +21,7 @@ export default function LoginScreen({ onLogin, onCrearCuenta }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (onLogin) {
-      onLogin(rut, password);
+      onLogin(rut, password, recuerdame);
     }
   };
 
