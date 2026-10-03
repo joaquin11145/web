@@ -1,0 +1,24 @@
+:root {
+  --color-primario: #c3552b;
+  --color-primario-hover: #a8441e;
+  --color-fondo: #fbfbf9;
+  --color-texto-oscuro: #222222;
+  --color-texto-claro: #ffffff;
+  --color-borde: #8a8a8a;
+  --color-input-bg: #ffffff;
+  --color-blanco: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--color-fondo);
+  color: var(--color-texto-oscuro);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
