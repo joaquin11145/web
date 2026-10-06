@@ -10,6 +10,8 @@ import CatalogScreen from './pages/catalog/CatalogScreen.jsx';
 import FavoritesScreen from './pages/Favorites/FavoritesScreen.jsx';
 import EmprendedorDashboard from './pages/Emprendedor/EmprendedorDashboard.jsx';
 import PublicationsScreen from './pages/Emprendedor/PublicationScreen.jsx';
+import AdministrarStock from './pages/AdministrarStock/AdministrarStock.jsx';
+import PerfilScreen from './pages/Perfil/PerfilScreen.jsx';
 
 const theme = createTheme({
   palette: {
@@ -22,7 +24,7 @@ const theme = createTheme({
 export default function App() {
   const navigate = useNavigate();
   const [favoritos, setFavoritos] = useState([]);
-  const [estaLogueado, setEstaLogueado] = useState(false);
+  const [estaLogueado, setEstaLogueado] = useState(true);
 
   const handleLogin = (rut, password, recuerdame) => {
     console.log({ rut, password, recuerdame });
@@ -50,18 +52,35 @@ export default function App() {
   ]);
 
   const handleEditarProducto = (form, productoEditar) => {
+    const datosNormalizados = {
+      ...form,
+      valor: form.valor ? Number(form.valor) : 0,
+      stock: form.stock !== undefined ? Number(form.stock) : 0,
+      tamanos: form.tamanos || (form.tamano ? [form.tamano] : []),
+      colores: form.colores || (form.color ? [form.color] : []),
+    };
+
     if (productoEditar) {
-      console.log('Producto actualizado:', form);
-      setProductos((prev) => prev.map((p) => (p.id === productoEditar.id ? { ...p, ...form } : p)));
+      console.log('Producto actualizado:', datosNormalizados);
+      setProductos((prev) =>
+        prev.map((p) => (p.id === productoEditar.id ? { ...p, ...datosNormalizados } : p))
+      );
     } else {
-      console.log('Producto creado:', form);
-      setProductos((prev) => [...prev, { ...form, id: Date.now() }]);
+      console.log('Producto creado:', datosNormalizados);
+      setProductos((prev) => [...prev, { ...datosNormalizados, id: Date.now() }]);
     }
   };
 
   const handleEliminarProducto = (producto) => {
     console.log('Producto eliminado:', producto);
     setProductos((prev) => prev.filter((p) => p.id !== producto.id));
+  };
+
+  const handleActualizarStock = (productoId, nuevosDatos) => {
+    console.log('Stock actualizado para producto', productoId, nuevosDatos);
+    setProductos((prev) =>
+      prev.map((p) => (p.id === productoId ? { ...p, ...nuevosDatos } : p))
+    );
   };
 
   return (
@@ -106,6 +125,15 @@ export default function App() {
         />
 
         <Route
+          path="/perfil"
+          element={
+            estaLogueado
+              ? <PerfilScreen />
+              : <Navigate to="/login" replace />
+          }
+        />
+
+        <Route
           path="/emprendedor"
           element={estaLogueado ? <EmprendedorDashboard /> : <Navigate to="/login" replace />}
         />
@@ -121,6 +149,17 @@ export default function App() {
             ) : (
               <Navigate to="/login" replace />
             )
+          }
+        />
+
+        <Route
+          path="/emprendedor/stock"
+          element={
+            <AdministrarStock
+              productos={productos}
+              onAtras={() => navigate('/emprendedor')}
+              onActualizarStock={handleActualizarStock}
+            />
           }
         />
       </Routes>

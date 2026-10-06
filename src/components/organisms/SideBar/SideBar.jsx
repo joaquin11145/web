@@ -15,7 +15,7 @@ const categorias = [
   { nombre: 'Categoria 5', subcategorias: ['Subcategoria 10', 'Subcategoria 11'] },
 ];
 
-const opcionesPrincipales = ['Mensajes', 'Tus Pedidos', 'Transacciones', 'Modo Emprendedor'];
+const opcionesPrincipales = ['Mensajes', 'Tus Pedidos', 'Transacciones'];
 
 export default function Sidebar({ open, onClose, onNavigate }) {
   const [categoriaHover, setCategoriaHover] = useState(null);

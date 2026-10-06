@@ -8,10 +8,13 @@ import Typography from '@mui/material/Typography';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Divider from '@mui/material/Divider';
+import Button from '@mui/material/Button';
 import MenuIcon from '@mui/icons-material/Menu';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import PersonIcon from '@mui/icons-material/Person';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import StorefrontIcon from '@mui/icons-material/Storefront';
+import LogoutIcon from '@mui/icons-material/Logout';
 
 export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction }) {
   const navigate = useNavigate();
@@ -59,6 +62,7 @@ export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction
           <Typography variant="body2">Favoritos</Typography>
         </Box>
 
+        {/* Trigger del menú de usuario */}
         <Box
           onClick={handleOpenMenu}
           sx={{
@@ -69,7 +73,8 @@ export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction
             cursor: 'pointer',
             px: 1,
             py: 0.5,
-            '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.08)' },
+            borderRadius: '20px',
+            '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.12)' },
           }}
         >
           <Box
@@ -83,11 +88,12 @@ export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction
           >
             <PersonIcon fontSize="small" sx={{ color: '#fff' }} />
           </Box>
-          <Typography variant="body2" sx={{ color: '#fff' }}>
+          <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600 }}>
             {username}
           </Typography>
         </Box>
 
+        {/* Menú desplegable */}
         <Menu
           id="user-profile-menu"
           anchorEl={anchorEl}
@@ -97,48 +103,110 @@ export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction
           transformOrigin={{ vertical: 'top', horizontal: 'right' }}
           slotProps={{
             paper: {
-              sx: { minWidth: 220, borderRadius: 2, mt: 1 },
+              sx: {
+                minWidth: 230,
+                borderRadius: '16px',
+                border: '1.2px solid var(--color-texto-oscuro)',
+                bgcolor: 'var(--color-fondo)',
+                mt: 1,
+                p: 0.5,
+                boxShadow: '0 8px 24px rgba(44, 44, 42, 0.25)',
+              },
             },
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.5 }}>
-            <Box
-              sx={{
-                width: 36,
-                height: 36,
-                borderRadius: '50%',
-                bgcolor: 'var(--color-primario)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <PersonIcon sx={{ color: '#fff' }} fontSize="small" />
-            </Box>
-            <Box>
-              <Typography sx={{ fontWeight: 600, fontSize: '0.95rem' }}>{username}</Typography>
-              <Typography
-                onClick={() => handleOptionClick('Ver Perfil')}
-                sx={{ fontSize: '0.8rem', color: 'var(--color-primario)', cursor: 'pointer' }}
+          {/* Header con Avatar, Nombre y Botón Ver Perfil */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', px: 2, pt: 1.5, pb: 1.5, gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
+              <Box
+                sx={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: '50%',
+                  bgcolor: 'var(--color-primario)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
               >
-                Ver perfil
+                <PersonIcon sx={{ color: '#fff' }} fontSize="small" />
+              </Box>
+              <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--color-texto-oscuro)' }}>
+                {username}
               </Typography>
             </Box>
+
+            {/* Botón Ver Perfil estilo píldora */}
+            <Button
+              fullWidth
+              variant="outlined"
+              size="small"
+              onClick={() => handleOptionClick('Perfil')}
+              sx={{
+                borderRadius: '18px',
+                borderColor: 'var(--color-primario)',
+                color: 'var(--color-primario)',
+                fontWeight: 600,
+                fontSize: '0.82rem',
+                textTransform: 'none',
+                py: 0.4,
+                '&:hover': {
+                  borderColor: 'var(--color-primario)',
+                  bgcolor: 'rgba(195, 85, 43, 0.08)',
+                },
+              }}
+            >
+              Ver perfil
+            </Button>
           </Box>
 
-          <Divider />
+          <Divider sx={{ borderColor: 'var(--color-borde)', my: 0.5 }} />
 
-          <MenuItem onClick={() => handleOptionClick('Iniciar Sesión')} sx={{ fontSize: '0.9rem', py: 1 }}>
-            Iniciar Sesión
+          {/* Opción Modo Emprendedor */}
+          <MenuItem
+            onClick={() => handleOptionClick('Modo Emprendedor')}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.2,
+              borderRadius: '10px',
+              fontSize: '0.9rem',
+              fontWeight: 500,
+              color: 'var(--color-texto-oscuro)',
+              py: 1,
+              mx: 0.5,
+              '&:hover': {
+                bgcolor: 'rgba(195, 85, 43, 0.1)',
+                color: 'var(--color-primario)',
+              },
+            }}
+          >
+            <StorefrontIcon fontSize="small" sx={{ color: 'inherit' }} />
+            Modo Emprendedor
           </MenuItem>
 
-          <MenuItem onClick={() => handleOptionClick('Registrarse')} sx={{ fontSize: '0.9rem', py: 1 }}>
-            Registrarse
-          </MenuItem>
+          <Divider sx={{ borderColor: 'var(--color-borde)', my: 0.5 }} />
 
-          <Divider />
-
-          <MenuItem onClick={() => handleOptionClick('Cerrar Sesión')} sx={{ fontSize: '0.9rem', py: 1 }}>
+          {/* Opción Cerrar Sesión */}
+          <MenuItem
+            onClick={() => handleOptionClick('Cerrar Sesión')}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.2,
+              borderRadius: '10px',
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              color: 'var(--color-primario)',
+              py: 1,
+              mx: 0.5,
+              '&:hover': {
+                bgcolor: 'rgba(195, 85, 43, 0.12)',
+              },
+            }}
+          >
+            <LogoutIcon fontSize="small" sx={{ color: 'inherit' }} />
             Cerrar Sesión
           </MenuItem>
         </Menu>

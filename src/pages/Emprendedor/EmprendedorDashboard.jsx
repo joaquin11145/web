@@ -7,9 +7,8 @@ export default function EmprendedorDashboard() {
   const navigate = useNavigate();
 
   const opciones = [
-    { label: 'Publicaciones', ruta: '/emprendedor/publicaciones' },
-    { label: 'Crear publicación', ruta: '/emprendedor/publicaciones?crear=1' },
-    { label: 'Administrar Stock', ruta: '/emprendedor/publicaciones' },
+    { label: 'Administrar Publicaicones', ruta: '/emprendedor/publicaciones?crear=1' },
+    { label: 'Administrar Stock', ruta: '/emprendedor/stock' },
     { label: 'Ingresar como cliente', ruta: '/comprador' },
   ];
 
@@ -22,7 +21,15 @@ export default function EmprendedorDashboard() {
             fullWidth
             variant="contained"
             onClick={() => navigate(op.ruta)}
-            sx={{ bgcolor: 'var(--color-primario)', textTransform: 'none', borderRadius: 3, py: 1.2 }}
+            sx={{
+              bgcolor: 'var(--color-primario)',
+              textTransform: 'none',
+              borderRadius: 3,
+              py: 1.2,
+              '&:hover': {
+                bgcolor: 'var(--color-primario-hover, var(--color-primario))',
+              },
+            }}
           >
             {op.label}
           </Button>

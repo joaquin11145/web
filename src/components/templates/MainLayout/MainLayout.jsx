@@ -8,34 +8,28 @@ export default function MainLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
-
-const [currentUser, setCurrentUser] = useState({});
-
+  const [currentUser, setCurrentUser] = useState({ name: 'Usuario' });
 
   const handleSidebarNavigate = (opcion) => {
-  switch (opcion) {
-    case 'Perfil':
-      navigate('/perfil');
-      break;
-    case 'Modo Emprendedor':
-      navigate('/emprendedor');
-      break;
-    default:
-      break;
-  }
-};
-
+    switch (opcion) {
+      case 'Perfil':
+        navigate('/perfil');
+        break;
+      default:
+        break;
+    }
+  };
 
   const handleProfileMenuAction = (action) => {
     switch (action) {
-      case 'Iniciar Sesión':
-        navigate('/login');
+      case 'Perfil':
+        navigate('/perfil');
         break;
-      case 'Registrarse':
-        navigate('/signup');
+      case 'Modo Emprendedor':
+        navigate('/emprendedor');
         break;
       case 'Cerrar Sesión':
-        setCurrentUser(null); 
+        setCurrentUser(null);
         navigate('/login');
         break;
       default:
@@ -47,7 +41,7 @@ const [currentUser, setCurrentUser] = useState({});
     <Box sx={{ minHeight: '100vh', bgcolor: 'var(--color-fondo)' }}>
       <TopBar 
         onMenuClick={() => setSidebarOpen(true)} 
-        username={currentUser ? currentUser.name : 'Iniciar sesión'} 
+        username={currentUser ? currentUser.name : 'Usuario'} 
         onMenuAction={handleProfileMenuAction}
       />
       
