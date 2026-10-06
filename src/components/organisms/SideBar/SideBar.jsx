@@ -15,7 +15,7 @@ const categorias = [
   { nombre: 'Categoria 5', subcategorias: ['Subcategoria 10', 'Subcategoria 11'] },
 ];
 
-const opcionesPrincipales = ['Mensajes', 'Tus Pedidos', 'Transacciones'];
+const opcionesPrincipales = ['Mensajes', 'Tus Pedidos', 'Transacciones', 'Modo Emprendedor'];
 
 export default function Sidebar({ open, onClose, onNavigate }) {
   const [categoriaHover, setCategoriaHover] = useState(null);
@@ -27,7 +27,7 @@ export default function Sidebar({ open, onClose, onNavigate }) {
           <List disablePadding>
             {opcionesPrincipales.map((opcion) => (
               <ListItemButton key={opcion} onClick={() => onNavigate && onNavigate(opcion)}>
-                <ListItemText primary={opcion} primaryTypographyProps={{ fontWeight: 700 }} />
+                <ListItemText primary={opcion} slotProps={{ primary: { fontWeight: 700 } }} />
               </ListItemButton>
             ))}
 
@@ -42,13 +42,12 @@ export default function Sidebar({ open, onClose, onNavigate }) {
                   },
                 }}
               >
-                <ListItemText primary={categoria.nombre} primaryTypographyProps={{ fontWeight: 700 }} />
+                <ListItemText primary={categoria.nombre} slotProps={{ primary: { fontWeight: 700 } }} />
                 <ChevronRightIcon fontSize="small" />
               </ListItemButton>
             ))}
           </List>
         </Box>
-
 
         {categoriaHover && (
           <Paper

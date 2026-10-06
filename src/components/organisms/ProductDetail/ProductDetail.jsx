@@ -78,8 +78,8 @@ export default function ProductDetail({ item, onBack , favoritos = [], onToggleF
           </Box>
         </Box>
 
-        {/* Tallas */}
-        {item.tamanos.length > 0 && (
+
+        {(item.tamanos.length || []).length > 0 && (
           <Box sx={{ mt: 2 }}>
             <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>Talla:</Typography>
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
@@ -98,8 +98,8 @@ export default function ProductDetail({ item, onBack , favoritos = [], onToggleF
           </Box>
         )}
 
-        {/* Colores */}
-        {item.colores.length > 0 && (
+
+        {(item.colores.length || []).length > 0 && (
           <Box sx={{ mt: 2 }}>
             <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>Color:</Typography>
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>

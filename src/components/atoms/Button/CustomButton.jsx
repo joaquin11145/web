@@ -1,7 +1,7 @@
 import React from 'react';
 import Button from '@mui/material/Button';
 
-export default function CustomButton({ children, onClick, type = 'button', ...props }) {
+export default function CustomButton({ children, onClick, type = 'button', outlined = false, ...props }) {
   return (
     <Button
       type={type}
@@ -16,6 +16,7 @@ export default function CustomButton({ children, onClick, type = 'button', ...pr
         textTransform: 'none',
         fontWeight: 600,
         height: 38,
+        border: outlined ? '2px solid var(--color-carbon, #000)' : 'none',
         '&:hover': {
           bgcolor: 'primary.dark',
         },

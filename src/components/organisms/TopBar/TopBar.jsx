@@ -59,7 +59,6 @@ export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction
           <Typography variant="body2">Favoritos</Typography>
         </Box>
 
-
         <Box
           onClick={handleOpenMenu}
           sx={{
@@ -89,7 +88,6 @@ export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction
           </Typography>
         </Box>
 
-
         <Menu
           id="user-profile-menu"
           anchorEl={anchorEl}
@@ -97,11 +95,12 @@ export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction
           onClose={handleCloseMenu}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
           transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-          PaperProps={{
-            sx: { minWidth: 220, borderRadius: 2, mt: 1 },
+          slotProps={{
+            paper: {
+              sx: { minWidth: 220, borderRadius: 2, mt: 1 },
+            },
           }}
         >
-
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 2, py: 1.5 }}>
             <Box
               sx={{
@@ -136,7 +135,7 @@ export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction
           <MenuItem onClick={() => handleOptionClick('Registrarse')} sx={{ fontSize: '0.9rem', py: 1 }}>
             Registrarse
           </MenuItem>
-          
+
           <Divider />
 
           <MenuItem onClick={() => handleOptionClick('Cerrar Sesión')} sx={{ fontSize: '0.9rem', py: 1 }}>

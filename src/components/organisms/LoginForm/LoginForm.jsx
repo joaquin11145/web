@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import LoginField from '../../molecules/LoginField/LoginField.jsx';
@@ -47,15 +47,15 @@ export default function LoginForm({
         onChange={(e) => setRecuerdame(e.target.checked)}
       />
 
-      {/* Botones Continuar y Crear Cuenta */}
       <Stack spacing={1.5} sx={{ width: '100%' }}>
-        <CustomButton type="submit">Continuar</CustomButton>
-        <CustomButton type="button" onClick={onCrearCuenta}>
+        <CustomButton type="submit" outlined>
+          Continuar
+        </CustomButton>
+        <CustomButton type="button" outlined onClick={onCrearCuenta}>
           Crear Cuenta
         </CustomButton>
       </Stack>
 
-      {/* Divisor con punto central */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5, mt: 3, width: '100%' }}>
         <Box sx={{ flex: 1, height: '1.2px', bgcolor: 'var(--color-texto-oscuro)' }} />
         <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: 'var(--color-texto-oscuro)' }} />

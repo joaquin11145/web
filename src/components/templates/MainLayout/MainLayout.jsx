@@ -13,14 +13,17 @@ const [currentUser, setCurrentUser] = useState({});
 
 
   const handleSidebarNavigate = (opcion) => {
-    switch (opcion) {
-      case 'Perfil':
-        navigate('/perfil');
-        break;
-      default:
-        break;
-    }
-  };
+  switch (opcion) {
+    case 'Perfil':
+      navigate('/perfil');
+      break;
+    case 'Modo Emprendedor':
+      navigate('/emprendedor');
+      break;
+    default:
+      break;
+  }
+};
 
 
   const handleProfileMenuAction = (action) => {

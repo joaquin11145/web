@@ -107,7 +107,6 @@ export default function SignUpForm({
             required
           />
 
-          {/* Checkbox Soy Empresa */}
           <FormControlLabel
             control={
               <Checkbox
@@ -136,7 +135,6 @@ export default function SignUpForm({
             disabled={!formData.soyEmpresa}
           />
 
-          {/* Checkbox Ingrese página Web */}
           <FormControlLabel
             control={
               <Checkbox
@@ -165,7 +163,6 @@ export default function SignUpForm({
             disabled={!formData.tieneWeb}
           />
 
-          {/* Botones de acción */}
           <Stack spacing={1.5} sx={{ mt: 2, width: '100%' }}>
             <CustomButton type="button" onClick={onAbrirTelefono}>
               Ingrese Teléfono
@@ -178,7 +175,6 @@ export default function SignUpForm({
             </CustomButton>
           </Stack>
 
-          {/* Divisor con punto central */}
           <Box
             sx={{
               display: 'flex',
