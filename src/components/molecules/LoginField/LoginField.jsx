@@ -17,6 +17,7 @@ export default function LoginField({
   required = false,
   disabled = false,
   placeholder = '',
+  endIcon = null,
 }) {
   return (
     <Box sx={{ width: '100%', mb: 2 }}>
@@ -104,6 +105,12 @@ export default function LoginField({
                     </svg>
                   )}
                 </IconButton>
+              </InputAdornment>
+            ) : endIcon ? (
+              <InputAdornment position="end">
+                <Box sx={{ display: 'flex', alignItems: 'center', mr: 0.5 }}>
+                  {endIcon}
+                </Box>
               </InputAdornment>
             ) : null,
           },

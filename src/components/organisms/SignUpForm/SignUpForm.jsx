@@ -6,6 +6,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
 import LoginField from '../../molecules/LoginField/LoginField.jsx';
 import CustomButton from '../../atoms/Button/CustomButton.jsx';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 
 export default function SignUpForm({
   formData,
@@ -83,6 +84,7 @@ export default function SignUpForm({
             value={formData.fechaNacimiento}
             placeholder="DD/MM/AAAA"
             onChange={(e) => handleChange('fechaNacimiento', e.target.value)}
+            endIcon={<CalendarMonthIcon fontSize="small" />} 
           />
         </Box>
 

@@ -4,6 +4,7 @@ import SignUpForm from '../../components/organisms/SignUpForm/SignUpForm.jsx';
 import PhoneModal from '../../components/organisms/PhoneModal/PhoneModal.jsx';
 import AddressModal from '../../components/organisms/AddressModal/AddressModal.jsx';
 
+
 export default function SignUpScreen({ onVolverLogin }) {
   const [formData, setFormData] = useState({
     rut: '',

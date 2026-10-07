@@ -24,7 +24,7 @@ export default function RememberUser({ checked, onChange }) {
           Recuérdame
         </Typography>
       }
-      sx={{ mb: 2, ml: 0 }}
+      sx={{ mb: 2, ml:-1.5 }}
     />
   );
 }
