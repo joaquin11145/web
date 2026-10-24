@@ -16,7 +16,7 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import LogoutIcon from '@mui/icons-material/Logout';
 
-export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction }) {
+export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction, onOpenCart }) {
   const navigate = useNavigate();
 
   const [anchorEl, setAnchorEl] = useState(null);
@@ -35,6 +35,14 @@ export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction
       onMenuAction(opcion);
     }
     handleCloseMenu();
+  };
+
+  const handleCartClick = () => {
+    if (onOpenCart) {
+      onOpenCart();
+    } else {
+      navigate('/carrito');
+    }
   };
 
   return (
@@ -74,7 +82,7 @@ export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction
             px: 1,
             py: 0.5,
             borderRadius: '20px',
-            '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.12)' },
+            '&:hover': { opacity: 0.9 },
           }}
         >
           <Box
@@ -86,9 +94,9 @@ export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction
               justifyContent: 'center',
             }}
           >
-            <PersonIcon fontSize="small" sx={{ color: '#fff' }} />
+            <PersonIcon fontSize="small" sx={{ color: 'var(--color-texto-claro)' }} />
           </Box>
-          <Typography variant="body2" sx={{ color: '#fff', fontWeight: 600 }}>
+          <Typography variant="body2" sx={{ color: 'var(--color-texto-claro)', fontWeight: 600 }}>
             {username}
           </Typography>
         </Box>
@@ -130,7 +138,7 @@ export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction
                   flexShrink: 0,
                 }}
               >
-                <PersonIcon sx={{ color: '#fff' }} fontSize="small" />
+                <PersonIcon sx={{ color: 'var(--color-texto-claro)' }} fontSize="small" />
               </Box>
               <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--color-texto-oscuro)' }}>
                 {username}
@@ -153,7 +161,8 @@ export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction
                 py: 0.4,
                 '&:hover': {
                   borderColor: 'var(--color-primario)',
-                  bgcolor: 'rgba(195, 85, 43, 0.08)',
+                  bgcolor: 'transparent',
+                  opacity: 0.8,
                 },
               }}
             >
@@ -177,7 +186,6 @@ export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction
               py: 1,
               mx: 0.5,
               '&:hover': {
-                bgcolor: 'rgba(195, 85, 43, 0.1)',
                 color: 'var(--color-primario)',
               },
             }}
@@ -202,7 +210,7 @@ export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction
               py: 1,
               mx: 0.5,
               '&:hover': {
-                bgcolor: 'rgba(195, 85, 43, 0.12)',
+                opacity: 0.85,
               },
             }}
           >
@@ -211,7 +219,7 @@ export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction
           </MenuItem>
         </Menu>
 
-        <IconButton color="inherit" sx={{ ml: 1 }} onClick={() => navigate('/carrito')}>
+        <IconButton color="inherit" sx={{ ml: 1 }} onClick={handleCartClick}>
           <ShoppingCartIcon fontSize="small" />
         </IconButton>
       </Toolbar>

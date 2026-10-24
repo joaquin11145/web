@@ -1,12 +1,18 @@
 :root {
-  --color-primario: #c3552b;
-  --color-primario-hover: #a8441e;
-  --color-fondo: #fbfbf9;
-  --color-texto-oscuro: #222222;
-  --color-texto-claro: #ffffff;
-  --color-borde: #8a8a8a;
-  --color-input-bg: #ffffff;
-  --color-blanco: #ffffff;
+  --color-primario: #C85A32;
+  --color-primario-hover: #C85A32;
+  --color-fondo: #f9f8f6;
+  --color-texto-oscuro: #2c2c2a;
+  --color-texto-claro: #f9f8f6;
+  --color-borde: #2c2c2a;
+  --color-input-bg: #f9f8f6;
+  --color-blanco: #f9f8f6;
+
+  /* Variables complementarias para el Carrito y componentes Figma */
+  --color-orange: #C85A32;
+  --color-dark: #2c2c2a;
+  --color-bg: #eae6df;
+  --color-subtext: #2c2c2a;
 }
 
 * {

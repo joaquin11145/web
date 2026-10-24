@@ -4,7 +4,7 @@ import Box from '@mui/material/Box';
 import TopBar from '../../organisms/TopBar/TopBar';
 import Sidebar from '../../organisms/SideBar/SideBar';
 
-export default function MainLayout({ children }) {
+export default function MainLayout({ children, onOpenCart }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -43,6 +43,7 @@ export default function MainLayout({ children }) {
         onMenuClick={() => setSidebarOpen(true)} 
         username={currentUser ? currentUser.name : 'Usuario'} 
         onMenuAction={handleProfileMenuAction}
+        onOpenCart={onOpenCart}
       />
       
       <Sidebar 
