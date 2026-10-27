@@ -10,6 +10,7 @@ import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import TextField from '@mui/material/TextField';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import StarIcon from '@mui/icons-material/Star';
+import CustomButton from '../../atoms/Button/CustomButton';
 
 export default function ProductDetail({
   item,
@@ -17,6 +18,7 @@ export default function ProductDetail({
   favoritos = [],
   onToggleFavorito,
   onAddToCart,
+  onCotizar,
 }) {
   const esFavorito = (id) => favoritos.some((f) => f.id === id);
   const [talla, setTalla] = useState(null);
@@ -27,6 +29,17 @@ export default function ProductDetail({
   const handleAgregar = () => {
     if (onAddToCart) {
       onAddToCart({
+        ...item,
+        cantidad: Number(cantidad) || 1,
+        tallaSeleccionada: talla,
+        colorSeleccionado: color,
+      });
+    }
+  };
+
+  const handleCotizar = () => {
+    if (onCotizar) {
+      onCotizar({
         ...item,
         cantidad: Number(cantidad) || 1,
         tallaSeleccionada: talla,
@@ -221,7 +234,7 @@ export default function ProductDetail({
           </Box>
         )}
 
-        {/* Cantidad + Agregar al Carrito */}
+        {/* Cantidad + Acciones (Cotizar y Agregar) */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 3, flexWrap: 'wrap' }}>
           <Typography variant="body2" sx={{ fontWeight: 600, color: 'var(--color-texto-oscuro)' }}>
             Cantidad:
@@ -256,26 +269,50 @@ export default function ProductDetail({
           <Typography variant="body2" sx={{ color: 'var(--color-borde)' }}>
             Quedan ({item.stock ?? 0}) en Stock
           </Typography>
-          <Button
-            variant="contained"
-            disableElevation
-            startIcon={<ShoppingCartIcon />}
-            onClick={handleAgregar}
-            sx={{
-              ml: 'auto',
-              bgcolor: 'var(--color-primario)',
-              color: 'var(--color-texto-claro)',
-              borderRadius: '20px',
-              textTransform: 'none',
-              fontWeight: 600,
-              px: 2.5,
-              '&:hover': {
-                bgcolor: 'var(--color-primario-hover)',
-              },
-            }}
-          >
-            Agregar
-          </Button>
+
+          {/* Botones Cotizar y Agregar */}
+          <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <CustomButton
+              pill
+              outlined
+              fullWidth={false}
+              onClick={handleCotizar}
+              sx={{
+                px: 2.2,
+                height: 38,
+                fontSize: '0.9rem',
+                borderColor: 'var(--color-primario)',
+                color: 'var(--color-primario)',
+                '&:hover': {
+                  borderColor: 'var(--color-primario-hover)',
+                  bgcolor: 'rgba(195, 85, 43, 0.08)',
+                },
+              }}
+            >
+              Cotizar
+            </CustomButton>
+
+            <Button
+              variant="contained"
+              disableElevation
+              startIcon={<ShoppingCartIcon />}
+              onClick={handleAgregar}
+              sx={{
+                bgcolor: 'var(--color-primario)',
+                color: 'var(--color-texto-claro)',
+                borderRadius: '20px',
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 2.5,
+                height: 38,
+                '&:hover': {
+                  bgcolor: 'var(--color-primario-hover)',
+                },
+              }}
+            >
+              Agregar
+            </Button>
+          </Box>
         </Box>
       </Paper>
 

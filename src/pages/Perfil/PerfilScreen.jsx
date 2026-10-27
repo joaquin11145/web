@@ -46,7 +46,7 @@ const perfilInicial = {
   password: '123',
 };
 
-export default function PerfilScreen() {
+export default function PerfilScreen({ cartProps = {} }) {
   const [perfil, setPerfil] = useState(perfilInicial);
   const [formData, setFormData] = useState(perfilInicial);
   const [editando, setEditando] = useState(false);
@@ -68,11 +68,11 @@ export default function PerfilScreen() {
   const [errorPass, setErrorPass] = useState('');
   const [mensajeExitoPass, setMensajeExitoPass] = useState('');
 
-  // Edite Teléfono
+  // Editar Teléfono
   const [nuevoTel, setNuevoTel] = useState('');
   const [telSeleccionado, setTelSeleccionado] = useState(null);
 
-  // Edite Dirección
+  // Editar Dirección
   const [dirSeleccionada, setDirSeleccionada] = useState(null);
   const [tipoInmueble, setTipoInmueble] = useState('Tienda física');
   const [nuevaDir, setNuevaDir] = useState({
@@ -195,7 +195,7 @@ export default function PerfilScreen() {
   };
 
   return (
-    <MainLayout>
+    <MainLayout {...cartProps}>
       <Box sx={{ maxWidth: 860, width: '100%', mx: 'auto', p: { xs: 1.5, sm: 3 }, boxSizing: 'border-box' }}>
         <Box
           component={editando ? 'form' : 'div'}
@@ -271,7 +271,9 @@ export default function PerfilScreen() {
                 <Box>
                   <Typography variant="caption" sx={labelCaptionStyle}>Teléfonos Registrados</Typography>
                   {perfil.telefonos.map((t, idx) => (
-                    <Typography key={idx} variant="body2" sx={valueTextStyle}>• {t}</Typography>
+                    <Typography key={idx} variant="body2" sx={valueTextStyle}>
+                      • {t}
+                    </Typography>
                   ))}
                 </Box>
 
@@ -762,7 +764,7 @@ export default function PerfilScreen() {
                     }}
                   >
                     <Typography variant="body2" sx={{ color: 'var(--color-texto-oscuro)', fontWeight: 500, fontSize: '0.85rem' }}>
-                      [{d.tipo}] {d.direccion} #{d.numero}, {d.comuna} - CP: {d.codigoPostal || 'S/N'} ({d.region})
+                      [{d.tipo}] {d.direccion} #{d.numero}, {d.comuna} CP: {d.codigoPostal || 'S/N'} ({d.region})
                     </Typography>
                   </Box>
                 ))

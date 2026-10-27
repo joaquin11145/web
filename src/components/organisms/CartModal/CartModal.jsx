@@ -16,7 +16,6 @@ export default function CartModal({
 }) {
   if (!isOpen) return null;
 
-  // Operaciones locales y cálculos matemáticos sincrónicos
   const total = cartItems.reduce(
     (acc, item) => acc + (Number(item.valor) || 0) * (Number(item.cantidad) || 1),
     0
@@ -24,7 +23,6 @@ export default function CartModal({
   const neto = Math.round(total / 1.19);
   const iva = total - neto;
 
-  // Identificar vendedor único
   const vendedorActual = cartItems.length > 0 ? cartItems[0].vendedor || 'Tienda Oficial' : null;
 
   const formatCLP = (monto) => monto.toLocaleString('es-CL');
@@ -48,7 +46,7 @@ export default function CartModal({
         onClick={(e) => e.stopPropagation()}
         sx={{
           width: '100%',
-          maxWidth: 380,
+          maxWidth: 400,
           height: '100vh',
           bgcolor: 'var(--color-fondo)',
           borderLeft: '1.5px solid var(--color-texto-oscuro)',
@@ -85,7 +83,7 @@ export default function CartModal({
           </IconButton>
         </Box>
 
-        {/* Lista central de productos con stepper y precio terracota */}
+        {/* Lista central de productos */}
         <Box
           sx={{
             flex: 1,
@@ -112,27 +110,44 @@ export default function CartModal({
               const cantidad = item.cantidad || 1;
               const subtotal = (Number(item.valor) || 0) * cantidad;
               const cantDisplay = cantidad < 10 ? `0${cantidad}` : `${cantidad}`;
+              const key = item.itemKey || item.id;
 
               return (
                 <Box
-                  key={item.id}
+                  key={key}
                   sx={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    gap: 1,
+                    gap: 1.5,
+                    pb: 1,
+                    borderBottom: '1px solid var(--color-borde)',
                   }}
                 >
-                  <Typography
-                    sx={{
-                      fontSize: '0.95rem',
-                      fontWeight: 500,
-                      color: 'var(--color-texto-oscuro)',
-                      flex: 1,
-                    }}
-                  >
-                    {item.nombre}
-                  </Typography>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography
+                      sx={{
+                        fontSize: '0.95rem',
+                        fontWeight: 600,
+                        color: 'var(--color-texto-oscuro)',
+                      }}
+                    >
+                      {item.nombre}
+                    </Typography>
+                    {(item.tallaSeleccionada || item.colorSeleccionado) && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: 'var(--color-borde)',
+                          display: 'block',
+                          fontSize: '0.78rem',
+                        }}
+                      >
+                        {item.tallaSeleccionada && `Talla: ${item.tallaSeleccionada} `}
+                        {item.colorSeleccionado && `| Color: ${item.colorSeleccionado}`}
+                      </Typography>
+                    )}
+                  </Box>
 
                   {/* Stepper de cantidad estilo Figma [ 02 ▵▿ ] */}
                   <Box
@@ -167,7 +182,7 @@ export default function CartModal({
                       <Box
                         component="button"
                         type="button"
-                        onClick={() => onUpdateQuantity && onUpdateQuantity(item.id, cantidad + 1)}
+                        onClick={() => onUpdateQuantity && onUpdateQuantity(key, cantidad + 1)}
                         sx={arrowBtnStyle}
                       >
                         ▲
@@ -175,7 +190,7 @@ export default function CartModal({
                       <Box
                         component="button"
                         type="button"
-                        onClick={() => onUpdateQuantity && onUpdateQuantity(item.id, Math.max(0, cantidad - 1))}
+                        onClick={() => onUpdateQuantity && onUpdateQuantity(key, Math.max(0, cantidad - 1))}
                         sx={arrowBtnStyle}
                       >
                         ▼
@@ -212,7 +227,6 @@ export default function CartModal({
             flexShrink: 0,
           }}
         >
-          {/* Regla de negocio con botón Ver */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
             <Typography sx={{ fontSize: '0.8rem', color: 'var(--color-texto-oscuro)', lineHeight: 1.2 }}>
               Solo se pueden agregar Artículos del mismo vendedor
@@ -233,7 +247,6 @@ export default function CartModal({
             </CustomButton>
           </Box>
 
-          {/* Fila Neto */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Typography sx={{ fontSize: '0.92rem', fontWeight: 500, color: 'var(--color-texto-oscuro)' }}>
               Neto
@@ -241,7 +254,6 @@ export default function CartModal({
             <Box sx={calcBoxStyle}>{formatCLP(neto)}</Box>
           </Box>
 
-          {/* Fila IVA (19%) */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Typography sx={{ fontSize: '0.92rem', fontWeight: 500, color: 'var(--color-texto-oscuro)' }}>
               IVA (19%)
@@ -249,7 +261,6 @@ export default function CartModal({
             <Box sx={calcBoxStyle}>{formatCLP(iva)}</Box>
           </Box>
 
-          {/* Fila Total */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Typography sx={{ fontSize: '0.92rem', fontWeight: 500, color: 'var(--color-texto-oscuro)' }}>
               Total
@@ -257,11 +268,11 @@ export default function CartModal({
             <Box sx={calcBoxStyle}>{formatCLP(total)}</Box>
           </Box>
 
-          {/* Botones Cotizar y Pagar estilo Figma */}
           <Box sx={{ display: 'flex', gap: 1.5, mt: 0.5 }}>
             <CustomButton
               pill
               onClick={() => onCotizar && onCotizar(cartItems)}
+              disabled={cartItems.length === 0}
             >
               Cotizar
             </CustomButton>
@@ -269,6 +280,7 @@ export default function CartModal({
             <CustomButton
               pill
               onClick={() => onPagar && onPagar(cartItems)}
+              disabled={cartItems.length === 0}
             >
               Pagar
             </CustomButton>
