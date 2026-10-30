@@ -18,6 +18,9 @@ import FavoritesScreen from './pages/Favorites/FavoritesScreen.jsx';
 import EmprendedorDashboard from './pages/Emprendedor/EmprendedorDashboard.jsx';
 import PublicationsScreen from './pages/Emprendedor/PublicationScreen.jsx';
 import AdministrarStock from './pages/AdministrarStock/AdministrarStock.jsx';
+import AtenderDevolucionesScreen from './pages/Emprendedor/AtenderDevolucionesScreen.jsx';
+import AdminDashboard from './pages/Admin/AdminDashboard.jsx';
+import AdminLoginScreen from './pages/Admin/AdminLoginScreen.jsx';
 import PerfilScreen from './pages/Perfil/PerfilScreen.jsx';
 import MensajeriaScreen from './pages/Mensajeria/MensajeriaScreen.jsx';
 import HistorialPedidos from './pages/Comprador/HistorialPedidos.jsx';
@@ -39,13 +42,16 @@ export default function App() {
   const [favoritos, setFavoritos] = useState([]);
   const [estaLogueado, setEstaLogueado] = useState(true);
 
+  // Estado de sesión exclusivo del Administrador
+  const [estaLogueadoAdmin, setEstaLogueadoAdmin] = useState(false);
+
   // Estado del filtro de vendedor activo en el catálogo
   const [vendedorFiltrado, setVendedorFiltrado] = useState(null);
 
   // Modal de advertencia por vendedor diferente
   const [alertaVendedor, setAlertaVendedor] = useState({ open: false, vendedorExistente: '', vendedorNuevo: '' });
 
-  // Estado global del carrito
+  // Estado global del carrito con clave única de variante
   const [cartItems, setCartItems] = useState([
     {
       id: 1,
@@ -95,7 +101,6 @@ export default function App() {
     });
   };
 
-  // Regla de Negocio: Validar vendedor único al agregar al carrito
   const handleAddToCart = (producto) => {
     const vendedorProducto = producto.vendedor || 'Tienda Oficial';
 
@@ -348,8 +353,18 @@ export default function App() {
 
         <Route
           path="/emprendedor"
-          element={estaLogueado ? <EmprendedorDashboard /> : <Navigate to="/login" replace />}
+          element={
+            estaLogueado ? (
+              <EmprendedorDashboard
+                onCrearProducto={(nuevo) => handleEditarProducto(nuevo, null)}
+                cartProps={commonCartProps}
+              />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
         />
+
         <Route
           path="/emprendedor/publicaciones"
           element={
@@ -375,9 +390,38 @@ export default function App() {
             />
           }
         />
+
+        <Route
+          path="/emprendedor/devoluciones"
+          element={
+            estaLogueado ? (
+              <AtenderDevolucionesScreen cartProps={commonCartProps} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+
+        {/* Ruta Protegida: /admin */}
+        <Route
+          path="/admin"
+          element={
+            estaLogueadoAdmin ? (
+              <AdminDashboard
+                onLogoutAdmin={() => setEstaLogueadoAdmin(false)}
+                cartProps={commonCartProps}
+              />
+            ) : (
+              <AdminLoginScreen
+                onLoginSuccess={() => setEstaLogueadoAdmin(true)}
+                onVolverSitio={() => navigate('/comprador')}
+              />
+            )
+          }
+        />
       </Routes>
 
-      {/* Modal de Advertencia Regla de Negocio Vendedor Único */}
+      {/* Modal Advertencia Vendedor Único */}
       <Dialog
         open={alertaVendedor.open}
         onClose={() => setAlertaVendedor({ open: false, vendedorExistente: '', vendedorNuevo: '' })}

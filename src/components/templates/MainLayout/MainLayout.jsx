@@ -29,6 +29,7 @@ export default function MainLayout({
     setSidebarOpen(false);
 
     switch (opcion) {
+      // Opciones Comprador
       case 'Mensajes':
         navigate('/mensajes');
         break;
@@ -47,6 +48,25 @@ export default function MainLayout({
       case 'Modo Emprendedor':
         navigate('/emprendedor');
         break;
+
+      // Opciones Emprendedor
+      case 'Pedidos Recibidos':
+        navigate('/emprendedor');
+        break;
+      case 'Devoluciones':
+        navigate('/emprendedor/devoluciones');
+        break;
+      case 'Publicaciones':
+        navigate('/emprendedor/publicaciones');
+        break;
+      case 'Administrar Stock':
+        navigate('/emprendedor/stock');
+        break;
+      case 'Ingresar como cliente':
+      case 'Modo Comprador':
+        navigate('/comprador');
+        break;
+
       default:
         console.log('Navegando a opción:', opcion);
         navigate('/comprador');
@@ -61,6 +81,9 @@ export default function MainLayout({
         break;
       case 'Modo Emprendedor':
         navigate('/emprendedor');
+        break;
+      case 'Modo Comprador':
+        navigate('/comprador');
         break;
       case 'Cerrar Sesión':
         setCurrentUser(null);

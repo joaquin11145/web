@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import IconButton from '@mui/material/IconButton';
@@ -14,10 +14,15 @@ import StarBorderIcon from '@mui/icons-material/StarBorder';
 import PersonIcon from '@mui/icons-material/Person';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import StorefrontIcon from '@mui/icons-material/Storefront';
+import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
 
 export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction, onOpenCart }) {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Detectar si estamos en el panel del emprendedor
+  const esModoEmprendedor = location.pathname.startsWith('/emprendedor');
 
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
@@ -56,21 +61,43 @@ export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction
           component="img"
           src="/logo.png"
           alt="MeyerExpress"
-          onClick={() => navigate('/comprador')}
+          onClick={() => navigate(esModoEmprendedor ? '/emprendedor' : '/comprador')}
           sx={{ height: 32, ml: 1, cursor: 'pointer' }}
         />
 
+        {/* Indicador sutil de Modo Emprendedor */}
+        {esModoEmprendedor && (
+          <Typography
+            sx={{
+              ml: 1.5,
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              bgcolor: 'rgba(0, 0, 0, 0.2)',
+              px: 1.2,
+              py: 0.3,
+              borderRadius: '12px',
+              color: 'var(--color-texto-claro)',
+              display: { xs: 'none', sm: 'block' },
+            }}
+          >
+            PANEL EMPRENDEDOR
+          </Typography>
+        )}
+
         <Box sx={{ flexGrow: 1 }} />
 
-        <Box
-          sx={{ display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'pointer' }}
-          onClick={() => navigate('/favoritos')}
-        >
-          <StarBorderIcon fontSize="small" />
-          <Typography variant="body2">Favoritos</Typography>
-        </Box>
+        {/* Favoritos solo visible para el Comprador */}
+        {!esModoEmprendedor && (
+          <Box
+            sx={{ display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'pointer' }}
+            onClick={() => navigate('/favoritos')}
+          >
+            <StarBorderIcon fontSize="small" />
+            <Typography variant="body2">Favoritos</Typography>
+          </Box>
+        )}
 
-        {/* Trigger del menú de usuario */}
+        {/* Menú de usuario */}
         <Box
           onClick={handleOpenMenu}
           sx={{
@@ -123,7 +150,7 @@ export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction
             },
           }}
         >
-          {/* Header con Avatar, Nombre y Botón Ver Perfil */}
+          {/* Header con Perfil */}
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', px: 2, pt: 1.5, pb: 1.5, gap: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
               <Box
@@ -145,7 +172,6 @@ export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction
               </Typography>
             </Box>
 
-            {/* Botón Ver Perfil estilo píldora */}
             <Button
               fullWidth
               variant="outlined"
@@ -172,31 +198,50 @@ export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction
 
           <Divider sx={{ borderColor: 'var(--color-borde)', my: 0.5 }} />
 
-          {/* Opción Modo Emprendedor */}
-          <MenuItem
-            onClick={() => handleOptionClick('Modo Emprendedor')}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.2,
-              borderRadius: '10px',
-              fontSize: '0.9rem',
-              fontWeight: 500,
-              color: 'var(--color-texto-oscuro)',
-              py: 1,
-              mx: 0.5,
-              '&:hover': {
-                color: 'var(--color-primario)',
-              },
-            }}
-          >
-            <StorefrontIcon fontSize="small" sx={{ color: 'inherit' }} />
-            Modo Emprendedor
-          </MenuItem>
+          {/* Alternador dinámico según el modo actual */}
+          {esModoEmprendedor ? (
+            <MenuItem
+              onClick={() => handleOptionClick('Modo Comprador')}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.2,
+                borderRadius: '10px',
+                fontSize: '0.9rem',
+                fontWeight: 500,
+                color: 'var(--color-texto-oscuro)',
+                py: 1,
+                mx: 0.5,
+                '&:hover': { color: 'var(--color-primario)' },
+              }}
+            >
+              <ShoppingBagOutlinedIcon fontSize="small" sx={{ color: 'inherit' }} />
+              Ingresar como Cliente
+            </MenuItem>
+          ) : (
+            <MenuItem
+              onClick={() => handleOptionClick('Modo Emprendedor')}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.2,
+                borderRadius: '10px',
+                fontSize: '0.9rem',
+                fontWeight: 500,
+                color: 'var(--color-texto-oscuro)',
+                py: 1,
+                mx: 0.5,
+                '&:hover': { color: 'var(--color-primario)' },
+              }}
+            >
+              <StorefrontIcon fontSize="small" sx={{ color: 'inherit' }} />
+              Modo Emprendedor
+            </MenuItem>
+          )}
 
           <Divider sx={{ borderColor: 'var(--color-borde)', my: 0.5 }} />
 
-          {/* Opción Cerrar Sesión */}
+          {/* Cerrar Sesión */}
           <MenuItem
             onClick={() => handleOptionClick('Cerrar Sesión')}
             sx={{
@@ -209,9 +254,7 @@ export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction
               color: 'var(--color-primario)',
               py: 1,
               mx: 0.5,
-              '&:hover': {
-                opacity: 0.85,
-              },
+              '&:hover': { opacity: 0.85 },
             }}
           >
             <LogoutIcon fontSize="small" sx={{ color: 'inherit' }} />
@@ -219,9 +262,12 @@ export default function TopBar({ onMenuClick, username = 'usuario', onMenuAction
           </MenuItem>
         </Menu>
 
-        <IconButton color="inherit" sx={{ ml: 1 }} onClick={handleCartClick}>
-          <ShoppingCartIcon fontSize="small" />
-        </IconButton>
+        {/* Carrito de compras SOLO visible en Modo Comprador */}
+        {!esModoEmprendedor && (
+          <IconButton color="inherit" sx={{ ml: 1 }} onClick={handleCartClick}>
+            <ShoppingCartIcon fontSize="small" />
+          </IconButton>
+        )}
       </Toolbar>
     </AppBar>
   );

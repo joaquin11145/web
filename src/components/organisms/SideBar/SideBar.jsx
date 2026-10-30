@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
 import List from '@mui/material/List';
@@ -14,6 +15,10 @@ import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined';
 import RequestQuoteOutlinedIcon from '@mui/icons-material/RequestQuoteOutlined';
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 import CategoryIcon from '@mui/icons-material/Category';
+import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
+import ListAltOutlinedIcon from '@mui/icons-material/ListAltOutlined';
+import StorefrontIcon from '@mui/icons-material/Storefront';
+import AssignmentReturnOutlinedIcon from '@mui/icons-material/AssignmentReturnOutlined';
 
 const categorias = [
   { nombre: 'Categoria 1', subcategorias: ['Subcategoria 1', 'Subcategoria 2', 'Subcategoria 3'] },
@@ -23,14 +28,10 @@ const categorias = [
   { nombre: 'Categoria 5', subcategorias: ['Subcategoria 10', 'Subcategoria 11'] },
 ];
 
-const iconosMenu = {
-  'Mensajes': <EmailOutlinedIcon fontSize="small" />,
-  'Tus Pedidos': <ShoppingBagOutlinedIcon fontSize="small" />,
-  'Cotizaciones': <RequestQuoteOutlinedIcon fontSize="small" />,
-  'Transacciones': <ReceiptLongOutlinedIcon fontSize="small" />,
-};
-
 export default function Sidebar({ open, onClose, onNavigate }) {
+  const location = useLocation();
+  const esModoEmprendedor = location.pathname.startsWith('/emprendedor');
+
   const [categoriaHover, setCategoriaHover] = useState(null);
 
   const handleItemClick = (opcion) => {
@@ -41,6 +42,24 @@ export default function Sidebar({ open, onClose, onNavigate }) {
       onClose();
     }
   };
+
+  const opcionesComprador = [
+    { label: 'Mensajes', icon: <EmailOutlinedIcon fontSize="small" /> },
+    { label: 'Tus Pedidos', icon: <ShoppingBagOutlinedIcon fontSize="small" /> },
+    { label: 'Cotizaciones', icon: <RequestQuoteOutlinedIcon fontSize="small" /> },
+    { label: 'Transacciones', icon: <ReceiptLongOutlinedIcon fontSize="small" /> },
+  ];
+
+  const opcionesEmprendedor = [
+    { label: 'Mensajes', icon: <EmailOutlinedIcon fontSize="small" /> },
+    { label: 'Pedidos Recibidos', icon: <ShoppingBagOutlinedIcon fontSize="small" /> },
+    { label: 'Devoluciones', icon: <AssignmentReturnOutlinedIcon fontSize="small" /> },
+    { label: 'Publicaciones', icon: <ListAltOutlinedIcon fontSize="small" /> },
+    { label: 'Administrar Stock', icon: <Inventory2OutlinedIcon fontSize="small" /> },
+    { label: 'Ingresar como cliente', icon: <StorefrontIcon fontSize="small" /> },
+  ];
+
+  const opcionesActuales = esModoEmprendedor ? opcionesEmprendedor : opcionesComprador;
 
   return (
     <Drawer
@@ -60,7 +79,6 @@ export default function Sidebar({ open, onClose, onNavigate }) {
       <Box sx={{ display: 'flex', height: '100%' }} onMouseLeave={() => setCategoriaHover(null)}>
         {/* Panel Principal */}
         <Box sx={{ width: 260, p: 2, display: 'flex', flexDirection: 'column' }} role="presentation">
-          {/* Cabecera del Sidebar */}
           <Box sx={{ px: 1, py: 1.5, mb: 1 }}>
             <Typography
               sx={{
@@ -70,18 +88,17 @@ export default function Sidebar({ open, onClose, onNavigate }) {
                 letterSpacing: '0.3px',
               }}
             >
-              Menú Principal
+              {esModoEmprendedor ? 'Panel Emprendedor' : 'Menú Principal'}
             </Typography>
           </Box>
 
           <Divider sx={{ borderColor: 'var(--color-borde)', mb: 1.5 }} />
 
-          {/* Opciones directas */}
           <List disablePadding sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
-            {['Mensajes', 'Tus Pedidos', 'Cotizaciones', 'Transacciones'].map((opcion) => (
+            {opcionesActuales.map((item) => (
               <ListItemButton
-                key={opcion}
-                onClick={() => handleItemClick(opcion)}
+                key={item.label}
+                onClick={() => handleItemClick(item.label)}
                 sx={{
                   borderRadius: '10px',
                   py: 1,
@@ -95,71 +112,73 @@ export default function Sidebar({ open, onClose, onNavigate }) {
                 }}
               >
                 <ListItemIcon sx={{ minWidth: 36, color: 'var(--color-texto-oscuro)' }}>
-                  {iconosMenu[opcion]}
+                  {item.icon}
                 </ListItemIcon>
                 <ListItemText
-                  primary={opcion}
+                  primary={item.label}
                   slotProps={{ primary: { fontWeight: 600, fontSize: '0.92rem' } }}
                 />
               </ListItemButton>
             ))}
           </List>
 
-          <Divider sx={{ borderColor: 'var(--color-borde)', my: 2 }} />
+          {!esModoEmprendedor && (
+            <>
+              <Divider sx={{ borderColor: 'var(--color-borde)', my: 2 }} />
 
-          <Typography
-            variant="caption"
-            sx={{
-              px: 1.5,
-              mb: 1,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              color: 'var(--color-borde)',
-              fontSize: '0.75rem',
-              letterSpacing: '0.5px',
-            }}
-          >
-            Categorías
-          </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  px: 1.5,
+                  mb: 1,
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  color: 'var(--color-borde)',
+                  fontSize: '0.75rem',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                Categorías
+              </Typography>
 
-          {/* Lista de Categorías */}
-          <List disablePadding sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flex: 1, overflowY: 'auto' }}>
-            {categorias.map((categoria) => {
-              const activo = categoriaHover === categoria.nombre;
-              return (
-                <ListItemButton
-                  key={categoria.nombre}
-                  selected={activo}
-                  onMouseEnter={() => setCategoriaHover(categoria.nombre)}
-                  onClick={() => handleItemClick(categoria.nombre)}
-                  sx={{
-                    borderRadius: '10px',
-                    py: 0.8,
-                    px: 1.5,
-                    color: activo ? 'var(--color-primario)' : 'var(--color-texto-oscuro)',
-                    bgcolor: activo ? 'rgba(195, 85, 43, 0.12) !important' : 'transparent',
-                    '&:hover': {
-                      bgcolor: 'rgba(195, 85, 43, 0.08)',
-                      color: 'var(--color-primario)',
-                    },
-                  }}
-                >
-                  <ListItemIcon sx={{ minWidth: 34, color: activo ? 'var(--color-primario)' : 'var(--color-borde)' }}>
-                    <CategoryIcon fontSize="small" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={categoria.nombre}
-                    slotProps={{ primary: { fontWeight: activo ? 700 : 500, fontSize: '0.9rem' } }}
-                  />
-                  <ChevronRightIcon fontSize="small" sx={{ color: activo ? 'var(--color-primario)' : 'var(--color-borde)' }} />
-                </ListItemButton>
-              );
-            })}
-          </List>
+              <List disablePadding sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flex: 1, overflowY: 'auto' }}>
+                {categorias.map((categoria) => {
+                  const activo = categoriaHover === categoria.nombre;
+                  return (
+                    <ListItemButton
+                      key={categoria.nombre}
+                      selected={activo}
+                      onMouseEnter={() => setCategoriaHover(categoria.nombre)}
+                      onClick={() => handleItemClick(categoria.nombre)}
+                      sx={{
+                        borderRadius: '10px',
+                        py: 0.8,
+                        px: 1.5,
+                        color: activo ? 'var(--color-primario)' : 'var(--color-texto-oscuro)',
+                        bgcolor: activo ? 'rgba(195, 85, 43, 0.12) !important' : 'transparent',
+                        '&:hover': {
+                          bgcolor: 'rgba(195, 85, 43, 0.08)',
+                          color: 'var(--color-primario)',
+                        },
+                      }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 34, color: activo ? 'var(--color-primario)' : 'var(--color-borde)' }}>
+                        <CategoryIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={categoria.nombre}
+                        slotProps={{ primary: { fontWeight: activo ? 700 : 500, fontSize: '0.9rem' } }}
+                      />
+                      <ChevronRightIcon fontSize="small" sx={{ color: activo ? 'var(--color-primario)' : 'var(--color-borde)' }} />
+                    </ListItemButton>
+                  );
+                })}
+              </List>
+            </>
+          )}
         </Box>
 
-        {/* Submenú Flotante al pasar el cursor */}
-        {categoriaHover && (
+        {!esModoEmprendedor && categoriaHover && (
           <Paper
             elevation={4}
             sx={{
