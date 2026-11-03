@@ -19,6 +19,7 @@ import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import ListAltOutlinedIcon from '@mui/icons-material/ListAltOutlined';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import AssignmentReturnOutlinedIcon from '@mui/icons-material/AssignmentReturnOutlined';
+import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
 
 const categorias = [
   { nombre: 'Categoria 1', subcategorias: ['Subcategoria 1', 'Subcategoria 2', 'Subcategoria 3'] },
@@ -30,6 +31,7 @@ const categorias = [
 
 export default function Sidebar({ open, onClose, onNavigate }) {
   const location = useLocation();
+  const esModoAdmin = location.pathname.startsWith('/admin');
   const esModoEmprendedor = location.pathname.startsWith('/emprendedor');
 
   const [categoriaHover, setCategoriaHover] = useState(null);
@@ -43,6 +45,7 @@ export default function Sidebar({ open, onClose, onNavigate }) {
     }
   };
 
+  // Opciones exclusivas para Comprador
   const opcionesComprador = [
     { label: 'Mensajes', icon: <EmailOutlinedIcon fontSize="small" /> },
     { label: 'Tus Pedidos', icon: <ShoppingBagOutlinedIcon fontSize="small" /> },
@@ -50,6 +53,7 @@ export default function Sidebar({ open, onClose, onNavigate }) {
     { label: 'Transacciones', icon: <ReceiptLongOutlinedIcon fontSize="small" /> },
   ];
 
+  // Opciones exclusivas para Emprendedor
   const opcionesEmprendedor = [
     { label: 'Mensajes', icon: <EmailOutlinedIcon fontSize="small" /> },
     { label: 'Pedidos Recibidos', icon: <ShoppingBagOutlinedIcon fontSize="small" /> },
@@ -59,7 +63,18 @@ export default function Sidebar({ open, onClose, onNavigate }) {
     { label: 'Ingresar como cliente', icon: <StorefrontIcon fontSize="small" /> },
   ];
 
-  const opcionesActuales = esModoEmprendedor ? opcionesEmprendedor : opcionesComprador;
+  // Opciones exclusivas para Administrador
+  const opcionesAdmin = [
+    { label: 'Administrar Panel', icon: <AdminPanelSettingsOutlinedIcon fontSize="small" /> },
+    { label: 'Volver a Comprador', icon: <StorefrontIcon fontSize="small" /> },
+    { label: 'Volver a Emprendedor', icon: <StorefrontIcon fontSize="small" /> },
+  ];
+
+  const opcionesActuales = esModoAdmin
+    ? opcionesAdmin
+    : esModoEmprendedor
+    ? opcionesEmprendedor
+    : opcionesComprador;
 
   return (
     <Drawer
@@ -69,6 +84,7 @@ export default function Sidebar({ open, onClose, onNavigate }) {
       slotProps={{
         paper: {
           sx: {
+            width: 280,
             bgcolor: 'var(--color-fondo)',
             borderRight: '1.5px solid var(--color-texto-oscuro)',
             boxShadow: '8px 0 24px rgba(44, 44, 42, 0.15)',
@@ -77,7 +93,6 @@ export default function Sidebar({ open, onClose, onNavigate }) {
       }}
     >
       <Box sx={{ display: 'flex', height: '100%' }} onMouseLeave={() => setCategoriaHover(null)}>
-        {/* Panel Principal */}
         <Box sx={{ width: 260, p: 2, display: 'flex', flexDirection: 'column' }} role="presentation">
           <Box sx={{ px: 1, py: 1.5, mb: 1 }}>
             <Typography
@@ -88,7 +103,11 @@ export default function Sidebar({ open, onClose, onNavigate }) {
                 letterSpacing: '0.3px',
               }}
             >
-              {esModoEmprendedor ? 'Panel Emprendedor' : 'Menú Principal'}
+              {esModoAdmin
+                ? 'Panel Administrador'
+                : esModoEmprendedor
+                ? 'Panel Emprendedor'
+                : 'Menú Principal'}
             </Typography>
           </Box>
 
@@ -122,7 +141,8 @@ export default function Sidebar({ open, onClose, onNavigate }) {
             ))}
           </List>
 
-          {!esModoEmprendedor && (
+          {/* Categorías del catálogo: estrictamente solo para el comprador */}
+          {!esModoEmprendedor && !esModoAdmin && (
             <>
               <Divider sx={{ borderColor: 'var(--color-borde)', my: 2 }} />
 
@@ -178,7 +198,7 @@ export default function Sidebar({ open, onClose, onNavigate }) {
           )}
         </Box>
 
-        {!esModoEmprendedor && categoriaHover && (
+        {!esModoEmprendedor && !esModoAdmin && categoriaHover && (
           <Paper
             elevation={4}
             sx={{

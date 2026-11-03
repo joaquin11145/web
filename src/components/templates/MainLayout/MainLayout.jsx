@@ -29,7 +29,7 @@ export default function MainLayout({
     setSidebarOpen(false);
 
     switch (opcion) {
-      // Opciones Comprador
+      // Comprador
       case 'Mensajes':
         navigate('/mensajes');
         break;
@@ -49,7 +49,7 @@ export default function MainLayout({
         navigate('/emprendedor');
         break;
 
-      // Opciones Emprendedor
+      // Emprendedor
       case 'Pedidos Recibidos':
         navigate('/emprendedor');
         break;
@@ -64,7 +64,16 @@ export default function MainLayout({
         break;
       case 'Ingresar como cliente':
       case 'Modo Comprador':
+      case 'Volver a Comprador':
         navigate('/comprador');
+        break;
+      case 'Volver a Emprendedor':
+        navigate('/emprendedor');
+        break;
+
+      // Administrador
+      case 'Administrar Panel':
+        navigate('/admin');
         break;
 
       default:

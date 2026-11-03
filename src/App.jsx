@@ -19,8 +19,16 @@ import EmprendedorDashboard from './pages/Emprendedor/EmprendedorDashboard.jsx';
 import PublicationsScreen from './pages/Emprendedor/PublicationScreen.jsx';
 import AdministrarStock from './pages/AdministrarStock/AdministrarStock.jsx';
 import AtenderDevolucionesScreen from './pages/Emprendedor/AtenderDevolucionesScreen.jsx';
+
+// Vistas del Administrador
 import AdminDashboard from './pages/Admin/AdminDashboard.jsx';
 import AdminLoginScreen from './pages/Admin/AdminLoginScreen.jsx';
+import TransporteScreen from './pages/Admin/TransporteScreen.jsx';
+import ZonaFormScreen from './pages/Admin/ZonaFormScreen.jsx';
+import EmprendedoresAdminScreen from './pages/Admin/EmprendedoresAdminScreen.jsx';
+import ComentariosAdminScreen from './pages/Admin/ComentariosAdminScreen.jsx';
+import DevolucionesAdminScreen from './pages/Admin/DevolucionesAdminScreen.jsx';
+
 import PerfilScreen from './pages/Perfil/PerfilScreen.jsx';
 import MensajeriaScreen from './pages/Mensajeria/MensajeriaScreen.jsx';
 import HistorialPedidos from './pages/Comprador/HistorialPedidos.jsx';
@@ -37,12 +45,49 @@ const theme = createTheme({
   },
 });
 
+const zonasIniciales = [
+  {
+    id: 1,
+    nombre: 'Santiago Centro',
+    ciudad: 'Santiago',
+    region: 'Región Metropolitana de Santiago',
+    comunas: ['Santiago', 'Providencia', 'Ñuñoa'],
+    tiempoEntrega: '24 horas',
+    tarifaBase: 2900,
+    costoKiloExtra: 500,
+    kilosIncluidos: 2,
+    habilitada: true,
+  },
+  {
+    id: 2,
+    nombre: 'Valparaíso Costa',
+    ciudad: 'Valparaíso',
+    region: 'Región de Valparaíso',
+    comunas: ['Valparaíso', 'Viña del Mar', 'Concón'],
+    tiempoEntrega: '48 horas',
+    tarifaBase: 3500,
+    costoKiloExtra: 700,
+    kilosIncluidos: 2,
+    habilitada: true,
+  },
+  {
+    id: 3,
+    nombre: 'Concepción Metropolitano',
+    ciudad: 'Concepción',
+    region: 'Región del Biobío',
+    comunas: ['Concepción', 'Talcahuano', 'San Pedro de la Paz'],
+    tiempoEntrega: '48 horas',
+    tarifaBase: 4200,
+    costoKiloExtra: 800,
+    kilosIncluidos: 1,
+    habilitada: false,
+  },
+];
+
 export default function App() {
   const navigate = useNavigate();
   const [favoritos, setFavoritos] = useState([]);
   const [estaLogueado, setEstaLogueado] = useState(true);
-
-  // Estado de sesión exclusivo del Administrador
   const [estaLogueadoAdmin, setEstaLogueadoAdmin] = useState(false);
 
   // Estado del filtro de vendedor activo en el catálogo
@@ -77,6 +122,9 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isQuotationOpen, setIsQuotationOpen] = useState(false);
   const [itemsParaCotizar, setItemsParaCotizar] = useState([]);
+
+  // Estado global de Zonas de Transporte y Cobertura
+  const [zonasTransporte, setZonasTransporte] = useState(zonasIniciales);
 
   const [productos, setProductos] = useState([
     { id: 1, nombre: 'Polera', valor: 12000, tamanos: ['S', 'M', 'L'], colores: ['Rojo', 'Amarillo', 'Verde', 'Naranjo'], stock: 5, tipo: 'producto', vendedor: 'Tienda Oficial' },
@@ -195,6 +243,23 @@ export default function App() {
     setProductos((prev) =>
       prev.map((p) => (p.id === productoId ? { ...p, ...nuevosDatos } : p))
     );
+  };
+
+  // Funciones de gestión de zonas
+  const handleToggleHabilitarZona = (id) => {
+    setZonasTransporte((prev) =>
+      prev.map((z) => (z.id === id ? { ...z, habilitada: !z.habilitada } : z))
+    );
+  };
+
+  const handleGuardarZona = (zona) => {
+    setZonasTransporte((prev) => {
+      const existe = prev.some((z) => z.id === zona.id);
+      if (existe) {
+        return prev.map((z) => (z.id === zona.id ? zona : z));
+      }
+      return [...prev, zona];
+    });
   };
 
   const commonCartProps = {
@@ -402,20 +467,95 @@ export default function App() {
           }
         />
 
-        {/* Ruta Protegida: /admin */}
+        {/* ================= RUTAS DEL ADMINISTRADOR ================= */}
         <Route
           path="/admin"
           element={
             estaLogueadoAdmin ? (
-              <AdminDashboard
-                onLogoutAdmin={() => setEstaLogueadoAdmin(false)}
-                cartProps={commonCartProps}
-              />
+              <AdminDashboard cartProps={commonCartProps} />
             ) : (
               <AdminLoginScreen
                 onLoginSuccess={() => setEstaLogueadoAdmin(true)}
                 onVolverSitio={() => navigate('/comprador')}
               />
+            )
+          }
+        />
+
+        <Route
+          path="/admin/emprendedores"
+          element={
+            estaLogueadoAdmin ? (
+              <EmprendedoresAdminScreen cartProps={commonCartProps} />
+            ) : (
+              <Navigate to="/admin" replace />
+            )
+          }
+        />
+
+        <Route
+          path="/admin/transporte"
+          element={
+            estaLogueadoAdmin ? (
+              <TransporteScreen
+                zonas={zonasTransporte}
+                onToggleHabilitar={handleToggleHabilitarZona}
+                cartProps={commonCartProps}
+              />
+            ) : (
+              <Navigate to="/admin" replace />
+            )
+          }
+        />
+
+        <Route
+          path="/admin/transporte/agregar"
+          element={
+            estaLogueadoAdmin ? (
+              <ZonaFormScreen
+                zonas={zonasTransporte}
+                onGuardarZona={handleGuardarZona}
+                cartProps={commonCartProps}
+              />
+            ) : (
+              <Navigate to="/admin" replace />
+            )
+          }
+        />
+
+        <Route
+          path="/admin/transporte/editar/:id"
+          element={
+            estaLogueadoAdmin ? (
+              <ZonaFormScreen
+                zonas={zonasTransporte}
+                onGuardarZona={handleGuardarZona}
+                cartProps={commonCartProps}
+              />
+            ) : (
+              <Navigate to="/admin" replace />
+            )
+          }
+        />
+
+        <Route
+          path="/admin/comentarios"
+          element={
+            estaLogueadoAdmin ? (
+              <ComentariosAdminScreen cartProps={commonCartProps} />
+            ) : (
+              <Navigate to="/admin" replace />
+            )
+          }
+        />
+
+        <Route
+          path="/admin/devoluciones"
+          element={
+            estaLogueadoAdmin ? (
+              <DevolucionesAdminScreen cartProps={commonCartProps} />
+            ) : (
+              <Navigate to="/admin" replace />
             )
           }
         />
