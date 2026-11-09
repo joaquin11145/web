@@ -33,12 +33,26 @@ export default function LoginField({
           }}
         >
           {label}
+          {required && (
+            <Box
+              component="span"
+              sx={{
+                color: 'var(--color-primario)',
+                fontWeight: 800,
+                ml: 0.5,
+                fontSize: '1rem',
+                lineHeight: 1,
+              }}
+            >
+              *
+            </Box>
+          )}
         </Typography>
       )}
       <TextField
         fullWidth
         size="small"
-        required={required}
+        required={false} // Se desactiva el asterisco nativo de HTML para usar el naranja personalizado
         disabled={disabled}
         placeholder={placeholder}
         value={value}

@@ -6,6 +6,8 @@ import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
+import Alert from '@mui/material/Alert';
+import Collapse from '@mui/material/Collapse';
 
 const vacio = {
   region: '',
@@ -20,11 +22,20 @@ const vacio = {
 export default function AddressModal({ open, onClose, onAgregar, esEmpresa = false }) {
   const [form, setForm] = useState(vacio);
   const [listaTemporal, setListaTemporal] = useState([]);
+  const [errorMensaje, setErrorMensaje] = useState('');
 
   if (!open) return null;
 
   const handleChange = (campo) => (e) => {
-    setForm((prev) => ({ ...prev, [campo]: e.target.value }));
+    let valor = e.target.value;
+
+    // Filtro numérico estricto para Código Postal y Número de Dirección
+    if (campo === 'codigoPostal' || campo === 'numero') {
+      valor = valor.replace(/\D/g, ''); // Rechaza letras y símbolos al instante
+    }
+
+    setForm((prev) => ({ ...prev, [campo]: valor }));
+    if (errorMensaje) setErrorMensaje('');
   };
 
   const handleTipoLugar = (tipo) => {
@@ -36,7 +47,19 @@ export default function AddressModal({ open, onClose, onAgregar, esEmpresa = fal
 
   const handleAgregar = (e) => {
     if (e) e.preventDefault();
-    if (!form.direccion.trim()) return;
+
+    if (!form.direccion.trim()) {
+      setErrorMensaje('Ingrese el nombre de la dirección / calle.');
+      return;
+    }
+    if (!form.numero.trim()) {
+      setErrorMensaje('Ingrese el número de la dirección (solo dígitos).');
+      return;
+    }
+    if (!form.comuna.trim()) {
+      setErrorMensaje('Ingrese la comuna.');
+      return;
+    }
 
     const nuevaDireccion = { ...form, esEmpresa };
     if (onAgregar) {
@@ -44,6 +67,7 @@ export default function AddressModal({ open, onClose, onAgregar, esEmpresa = fal
     }
     setListaTemporal((prev) => [...prev, nuevaDireccion]);
     setForm(vacio);
+    setErrorMensaje('');
   };
 
   const handleQuitar = (index) => {
@@ -52,13 +76,13 @@ export default function AddressModal({ open, onClose, onAgregar, esEmpresa = fal
 
   const handleSalir = () => {
     setForm(vacio);
+    setErrorMensaje('');
     if (onClose) onClose();
   };
 
   const primerTipoLugar = esEmpresa ? 'Tienda física' : 'oficina';
 
   return (
-    /* Fondo oscuro semitransparente que cubre la pantalla */
     <Box
       sx={{
         position: 'fixed',
@@ -76,7 +100,6 @@ export default function AddressModal({ open, onClose, onAgregar, esEmpresa = fal
       }}
       onClick={handleSalir}
     >
-      {/* Tarjeta Modal Blanca Flotante con Esquinas Redondeadas de Figma */}
       <Box
         onClick={(e) => e.stopPropagation()}
         sx={{
@@ -94,7 +117,14 @@ export default function AddressModal({ open, onClose, onAgregar, esEmpresa = fal
           overflowY: 'auto',
         }}
       >
-        {/* 1. Caja Superior de Previsualización con Scrollbar simulado */}
+        {/* Viñeta de error */}
+        <Collapse in={Boolean(errorMensaje)} sx={{ mb: 1.5, width: '100%' }}>
+          <Alert severity="error" sx={{ borderRadius: '8px', fontSize: '0.82rem', py: 0.3 }}>
+            {errorMensaje}
+          </Alert>
+        </Collapse>
+
+        {/* 1. Caja Superior de Previsualización */}
         <Box
           sx={{
             width: '100%',
@@ -107,7 +137,6 @@ export default function AddressModal({ open, onClose, onAgregar, esEmpresa = fal
             flexShrink: 0,
           }}
         >
-          {/* Contenido con la lista de direcciones agregadas */}
           <Box
             sx={{
               flex: 1,
@@ -157,7 +186,6 @@ export default function AddressModal({ open, onClose, onAgregar, esEmpresa = fal
             )}
           </Box>
 
-          {/* Barra de desplazamiento estética estilo Figma */}
           <Box
             sx={{
               width: 17,
@@ -171,25 +199,13 @@ export default function AddressModal({ open, onClose, onAgregar, esEmpresa = fal
               flexShrink: 0,
             }}
           >
-            <Box sx={{ fontSize: 8, height: 14, display: 'flex', alignItems: 'center', color: 'var(--color-texto-oscuro)' }}>
-              ▲
-            </Box>
-            <Box
-              sx={{
-                flex: 1,
-                width: '100%',
-                bgcolor: 'var(--color-fondo)',
-                borderTop: '1px solid var(--color-borde)',
-                borderBottom: '1px solid var(--color-borde)',
-              }}
-            />
-            <Box sx={{ fontSize: 8, height: 14, display: 'flex', alignItems: 'center', color: 'var(--color-texto-oscuro)' }}>
-              ▼
-            </Box>
+            <Box sx={{ fontSize: 8, height: 14, display: 'flex', alignItems: 'center', color: 'var(--color-texto-oscuro)' }}>▲</Box>
+            <Box sx={{ flex: 1, width: '100%', bgcolor: 'var(--color-fondo)', borderTop: '1px solid var(--color-borde)', borderBottom: '1px solid var(--color-borde)' }} />
+            <Box sx={{ fontSize: 8, height: 14, display: 'flex', alignItems: 'center', color: 'var(--color-texto-oscuro)' }}>▼</Box>
           </Box>
         </Box>
 
-        {/* 2. Checkboxes de Tipo de Lugar (Dependiente de esEmpresa) */}
+        {/* 2. Checkboxes de Tipo de Lugar */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 1 }}>
           <FormControlLabel
             control={
@@ -236,13 +252,13 @@ export default function AddressModal({ open, onClose, onAgregar, esEmpresa = fal
 
         {/* 3. Inputs del Formulario */}
         {[
-          { label: 'Ingrese Región', field: 'region' },
-          { label: 'Ingrese Provincia', field: 'provincia' },
-          { label: 'Ingrese Comuna', field: 'comuna' },
-          { label: 'Ingrese Código Postal', field: 'codigoPostal' },
-          { label: 'Ingrese Dirección', field: 'direccion' },
-          { label: 'Ingrese Número de Dirección', field: 'numero' },
-        ].map(({ label, field }) => (
+          { label: 'Ingrese Región', field: 'region', type: 'text' },
+          { label: 'Ingrese Provincia', field: 'provincia', type: 'text' },
+          { label: 'Ingrese Comuna', field: 'comuna', type: 'text' },
+          { label: 'Ingrese Código Postal (Solo números)', field: 'codigoPostal', type: 'tel', max: 7 },
+          { label: 'Ingrese Dirección', field: 'direccion', type: 'text' },
+          { label: 'Ingrese Número de Dirección (Solo números)', field: 'numero', type: 'tel', max: 8 },
+        ].map(({ label, field, max }) => (
           <Box key={field} sx={{ width: '100%', mb: 1 }}>
             <Typography
               variant="body2"
@@ -261,7 +277,10 @@ export default function AddressModal({ open, onClose, onAgregar, esEmpresa = fal
               size="small"
               value={form[field]}
               onChange={handleChange(field)}
-              inputProps={{ autoComplete: 'off' }}
+              inputProps={{
+                autoComplete: 'off',
+                maxLength: max || undefined,
+              }}
               sx={{
                 width: '100%',
                 '& .MuiOutlinedInput-root': {
@@ -290,7 +309,7 @@ export default function AddressModal({ open, onClose, onAgregar, esEmpresa = fal
           </Box>
         ))}
 
-        {/* 4. Botones: Agregar Dirección y Salir */}
+        {/* 4. Botones */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.8, width: '100%', mt: 1 }}>
           <Button
             type="button"
@@ -339,7 +358,7 @@ export default function AddressModal({ open, onClose, onAgregar, esEmpresa = fal
           </Button>
         </Box>
 
-        {/* 5. Divisor inferior característico con punto central */}
+        {/* 5. Divisor inferior */}
         <Box
           sx={{
             display: 'flex',

@@ -4,6 +4,8 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
+import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
 import LoginField from '../../molecules/LoginField/LoginField.jsx';
 import CustomButton from '../../atoms/Button/CustomButton.jsx';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
@@ -31,11 +33,19 @@ export default function SignUpForm({
     return `${cuerpo}-${dv}`;
   };
 
+  const formatearFecha = (valor) => {
+    const soloNumeros = valor.replace(/\D/g, '').slice(0, 8);
+    if (soloNumeros.length <= 2) return soloNumeros;
+    if (soloNumeros.length <= 4) return `${soloNumeros.slice(0, 2)}/${soloNumeros.slice(2)}`;
+    return `${soloNumeros.slice(0, 2)}/${soloNumeros.slice(2, 4)}/${soloNumeros.slice(4)}`;
+  };
+
   return (
     <Box
       component="form"
       onSubmit={onSubmit}
       autoComplete="off"
+      noValidate
       sx={{ width: '100%' }}
     >
       <Box
@@ -65,26 +75,75 @@ export default function SignUpForm({
           <LoginField
             label="Ingrese Nombres"
             value={formData.nombres}
-            onChange={(e) => handleChange('nombres', e.target.value)}
+            onChange={(e) => handleChange('nombres', e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''))}
             required
           />
           <LoginField
             label="Ingrese Apellidos"
             value={formData.apellidos}
-            onChange={(e) => handleChange('apellidos', e.target.value)}
+            onChange={(e) => handleChange('apellidos', e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''))}
             required
           />
-          <LoginField
-            label="Ingrese Género"
-            value={formData.genero}
-            onChange={(e) => handleChange('genero', e.target.value)}
-          />
+
+          {/* Ingrese Género */}
+          <Box sx={{ width: '100%', mb: 1.5 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                display: 'block',
+                mb: 0.6,
+                fontWeight: 500,
+                color: 'var(--color-texto-oscuro)',
+                fontSize: '0.88rem',
+              }}
+            >
+              Ingrese Género
+            </Typography>
+            <TextField
+              select
+              fullWidth
+              size="small"
+              value={formData.genero || ''}
+              onChange={(e) => handleChange('genero', e.target.value)}
+              sx={{
+                width: '100%',
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 0,
+                  height: 36,
+                  backgroundColor: 'var(--color-blanco)',
+                  '& fieldset': {
+                    borderColor: 'var(--color-borde)',
+                    borderWidth: '1.2px',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'var(--color-texto-oscuro)',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'var(--color-primario)',
+                  },
+                },
+                '& .MuiSelect-select': {
+                  py: 0.8,
+                  px: 1.5,
+                  fontSize: '0.92rem',
+                  color: 'var(--color-texto-oscuro)',
+                },
+              }}
+            >
+              <MenuItem value="Masculino">Masculino</MenuItem>
+              <MenuItem value="Femenino">Femenino</MenuItem>
+              <MenuItem value="Otros">Otros</MenuItem>
+              <MenuItem value="Prefiero no decirlo">Prefiero no decirlo</MenuItem>
+            </TextField>
+          </Box>
+
           <LoginField
             label="Ingrese Fecha de Nacimiento"
             value={formData.fechaNacimiento}
             placeholder="DD/MM/AAAA"
-            onChange={(e) => handleChange('fechaNacimiento', e.target.value)}
-            endIcon={<CalendarMonthIcon fontSize="small" />} 
+            onChange={(e) => handleChange('fechaNacimiento', formatearFecha(e.target.value))}
+            endIcon={<CalendarMonthIcon fontSize="small" />}
+            maxLength={10}
           />
         </Box>
 
@@ -135,6 +194,7 @@ export default function SignUpForm({
             value={formData.nombreEmpresa}
             onChange={(e) => handleChange('nombreEmpresa', e.target.value)}
             disabled={!formData.soyEmpresa}
+            required={formData.soyEmpresa}
           />
 
           <FormControlLabel
@@ -167,10 +227,14 @@ export default function SignUpForm({
 
           <Stack spacing={1.5} sx={{ mt: 2, width: '100%' }}>
             <CustomButton type="button" onClick={onAbrirTelefono}>
-              Ingrese Teléfono
+              {formData.telefonos && formData.telefonos.length > 0
+                ? `Teléfonos (${formData.telefonos.length})`
+                : 'Ingrese Teléfono'}
             </CustomButton>
             <CustomButton type="button" onClick={onAbrirDireccion}>
-              Ingrese Dirección
+              {formData.direcciones && formData.direcciones.length > 0
+                ? `Direcciones (${formData.direcciones.length})`
+                : 'Ingrese Dirección'}
             </CustomButton>
             <CustomButton type="submit">
               Crear Cuenta

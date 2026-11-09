@@ -1,55 +1,124 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
+import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Button from '@mui/material/Button';
+import Alert from '@mui/material/Alert';
+import Collapse from '@mui/material/Collapse';
+
 import MainLayout from '../../components/templates/MainLayout/MainLayout';
+import { hashPassword, verifyPassword } from '../../utils/security';
 
 function formatearRut(valor) {
+  if (!valor) return '';
   const limpio = valor.replace(/[^0-9kK]/g, '').toUpperCase();
   if (limpio.length <= 1) return limpio;
-  const cuerpo = limpio.slice(0, -1);
   const dv = limpio.slice(-1);
+  let cuerpo = limpio.slice(0, -1);
+  cuerpo = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   return `${cuerpo}-${dv}`;
 }
+
+function validarRut(rutCompleto) {
+  if (!rutCompleto) return false;
+  const limpio = rutCompleto.replace(/[^0-9kK]/g, '').toUpperCase();
+  if (limpio.length < 8 || limpio.length > 9) return false;
+
+  const cuerpo = limpio.slice(0, -1);
+  const dv = limpio.slice(-1);
+
+  let suma = 0;
+  let multiplo = 2;
+
+  for (let i = cuerpo.length - 1; i >= 0; i--) {
+    suma += multiplo * parseInt(cuerpo[i], 10);
+    multiplo = multiplo < 7 ? multiplo + 1 : 2;
+  }
+
+  const dvEsperado = 11 - (suma % 11);
+  let dvCalculado = '';
+  if (dvEsperado === 11) dvCalculado = '0';
+  else if (dvEsperado === 10) dvCalculado = 'K';
+  else dvCalculado = dvEsperado.toString();
+
+  return dv === dvCalculado;
+}
+
+function formatearFecha(valor) {
+  const soloNumeros = valor.replace(/\D/g, '').slice(0, 8);
+  if (soloNumeros.length <= 2) return soloNumeros;
+  if (soloNumeros.length <= 4) return `${soloNumeros.slice(0, 2)}/${soloNumeros.slice(2)}`;
+  return `${soloNumeros.slice(0, 2)}/${soloNumeros.slice(2, 4)}/${soloNumeros.slice(4)}`;
+}
+
+function formatearTelefono(valor) {
+  let digitos = valor.replace(/\D/g, '');
+  if (digitos.startsWith('569')) digitos = '9' + digitos.slice(3);
+  else if (digitos.startsWith('56')) digitos = digitos.slice(2);
+  digitos = digitos.slice(0, 9);
+
+  if (digitos.length === 0) return '';
+  if (digitos.length <= 1) return `+56 ${digitos}`;
+  if (digitos.length <= 5) return `+56 ${digitos.slice(0, 1)} ${digitos.slice(1)}`;
+  return `+56 ${digitos.slice(0, 1)} ${digitos.slice(1, 5)} ${digitos.slice(5)}`;
+}
+
+const DEFAULT_HASH_123 = '$2a$10$w099eX/y8Qe.Y69r255mkuWl570H75.K8Y71mO/kYQpY1.F/Ovi3q';
 
 const perfilInicial = {
   nombres: 'Carlos Andrés',
   apellidos: 'Pérez Gómez',
-  rut: '12-3',
-  correo: 'carlos.perez@ficticio.cl',
-  telefonos: ['+56 9 7654 3210', '+56 9 1122 3344'],
+  rut: '11.111.111-1',
+  genero: 'Masculino',
+  fechaNacimiento: '14/05/1992',
+  correo: 'juan.comprador@meyerexpress.cl',
+  telefonos: ['+56 9 8765 4321'],
   direcciones: [
     {
       id: 1,
       tipo: 'Casa/Depto.',
-      region: 'Metropolitana',
-      provincia: 'Santiago',
-      comuna: 'Las Condes',
-      codigoPostal: '7550000',
-      direccion: 'Av. Las Condes',
-      numero: '456',
-    },
-    {
-      id: 2,
-      tipo: 'Tienda física',
-      region: 'Los Lagos',
-      provincia: 'Osorno',
-      comuna: 'Osorno',
-      codigoPostal: '5290000',
-      direccion: 'Eleuterio Ramírez',
-      numero: '789',
+      region: 'Valparaíso',
+      provincia: 'Valparaíso',
+      comuna: 'Viña del Mar',
+      codigoPostal: '2520000',
+      direccion: 'Av. Libertad',
+      numero: '750',
     },
   ],
-  password: '123',
+  passwordHash: DEFAULT_HASH_123,
 };
 
-export default function PerfilScreen() {
+export default function PerfilScreen({ cartProps = {}, onActualizarPassword }) {
+  const currentUser = cartProps?.currentUser;
+
   const [perfil, setPerfil] = useState(perfilInicial);
   const [formData, setFormData] = useState(perfilInicial);
   const [editando, setEditando] = useState(false);
+
+  // Sincronizar datos respetando siempre el último passwordHash modificado
+  useEffect(() => {
+    if (currentUser) {
+      setPerfil((prev) => {
+        const hashActivo = currentUser.passwordHash || prev.passwordHash || DEFAULT_HASH_123;
+        const datosActualizados = {
+          ...prev,
+          ...currentUser,
+          nombres: currentUser.nombres || currentUser.name?.split(' ')[0] || prev.nombres,
+          apellidos: currentUser.apellidos || currentUser.name?.split(' ').slice(1).join(' ') || prev.apellidos,
+          rut: currentUser.rut || prev.rut,
+          correo: currentUser.email || prev.correo,
+          telefonos: currentUser.telefonos || prev.telefonos,
+          direcciones: currentUser.direcciones || prev.direcciones,
+          passwordHash: hashActivo,
+        };
+        setFormData(datosActualizados);
+        return datosActualizados;
+      });
+    }
+  }, [currentUser]);
 
   // Modales
   const [modalCredencialesOpen, setModalCredencialesOpen] = useState(false);
@@ -68,11 +137,12 @@ export default function PerfilScreen() {
   const [errorPass, setErrorPass] = useState('');
   const [mensajeExitoPass, setMensajeExitoPass] = useState('');
 
-  // Edite Teléfono
+  // Editar Teléfono
   const [nuevoTel, setNuevoTel] = useState('');
   const [telSeleccionado, setTelSeleccionado] = useState(null);
+  const [errorTel, setErrorTel] = useState('');
 
-  // Edite Dirección
+  // Editar Dirección
   const [dirSeleccionada, setDirSeleccionada] = useState(null);
   const [tipoInmueble, setTipoInmueble] = useState('Tienda física');
   const [nuevaDir, setNuevaDir] = useState({
@@ -83,15 +153,53 @@ export default function PerfilScreen() {
     direccion: '',
     numero: '',
   });
+  const [errorDir, setErrorDir] = useState('');
+
+  // Alerta de formulario principal
+  const [alertaPrincipal, setAlertaPrincipal] = useState({ open: false, mensaje: '', tipo: 'error' });
 
   const handleChange = (campo) => (e) => {
-    setFormData((prev) => ({ ...prev, [campo]: e.target.value }));
+    let valor = e.target.value;
+
+    if (campo === 'rut') {
+      valor = formatearRut(valor);
+    } else if (campo === 'fechaNacimiento') {
+      valor = formatearFecha(valor);
+    } else if (campo === 'nombres' || campo === 'apellidos') {
+      valor = valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+    }
+
+    setFormData((prev) => ({ ...prev, [campo]: valor }));
+    if (alertaPrincipal.open) setAlertaPrincipal({ open: false, mensaje: '', tipo: 'error' });
   };
 
-  // Validar credenciales para ingresar a la edición de datos
-  const handleValidarCredenciales = (e) => {
+  // Comparador estricto contra el hash almacenado en memoria
+  const validarPasswordUsuario = async (passwordPlana, hashAlmacenado) => {
+    if (!passwordPlana || !hashAlmacenado) return false;
+    try {
+      return await verifyPassword(passwordPlana, hashAlmacenado);
+    } catch (e) {
+      console.warn('Error verificando hash con bcrypt:', e);
+      return false;
+    }
+  };
+
+  // Validar credenciales con Bcrypt para ingresar a la edición de datos
+  const handleValidarCredenciales = async (e) => {
     e.preventDefault();
-    if (credRut.trim() === perfil.rut && credPassword.trim() === perfil.password) {
+    setErrorCred('');
+
+    const rutLimpioIngresado = credRut.replace(/[^0-9kK]/g, '').toUpperCase();
+    const rutLimpioPerfil = (perfil.rut || '').replace(/[^0-9kK]/g, '').toUpperCase();
+
+    if (rutLimpioIngresado !== rutLimpioPerfil) {
+      setErrorCred('RUT incorrecto.');
+      return;
+    }
+
+    const esPasswordValida = await validarPasswordUsuario(credPassword, perfil.passwordHash);
+
+    if (esPasswordValida) {
       setFormData(perfil);
       setModalCredencialesOpen(false);
       setEditando(true);
@@ -103,10 +211,22 @@ export default function PerfilScreen() {
     }
   };
 
-  // Validar credenciales para cambiar la contraseña
-  const handleValidarCredencialesPassword = (e) => {
+  // Validar credenciales con Bcrypt para autorizar el cambio de contraseña
+  const handleValidarCredencialesPassword = async (e) => {
     e.preventDefault();
-    if (credRut.trim() === perfil.rut && credPassword.trim() === perfil.password) {
+    setErrorCred('');
+
+    const rutLimpioIngresado = credRut.replace(/[^0-9kK]/g, '').toUpperCase();
+    const rutLimpioPerfil = (perfil.rut || '').replace(/[^0-9kK]/g, '').toUpperCase();
+
+    if (rutLimpioIngresado !== rutLimpioPerfil) {
+      setErrorCred('RUT incorrecto.');
+      return;
+    }
+
+    const esPasswordValida = await validarPasswordUsuario(credPassword, perfil.passwordHash);
+
+    if (esPasswordValida) {
       setErrorCred('');
       setModalPasswordOpen(true);
     } else {
@@ -114,31 +234,61 @@ export default function PerfilScreen() {
     }
   };
 
-  // Guardar la nueva contraseña
-  const handleGuardarNuevaPassword = (e) => {
+  // Hashear y guardar la nueva contraseña con bcrypt
+  const handleGuardarNuevaPassword = async (e) => {
     e.preventDefault();
-    if (!nuevaPass.trim()) {
-      setErrorPass('Ingrese una contraseña válida.');
+    setErrorPass('');
+
+    if (!nuevaPass.trim() || nuevaPass.length < 4) {
+      setErrorPass('La contraseña debe tener al menos 4 caracteres.');
       return;
     }
     if (nuevaPass !== confirmarPass) {
-      setErrorPass('Las contraseñas no coinciden.');
+      setErrorPass('La confirmación de la contraseña no coincide con la contraseña ingresada.');
       return;
     }
 
-    setPerfil((prev) => ({ ...prev, password: nuevaPass }));
+    const nuevoPasswordHash = await hashPassword(nuevaPass);
+
+    console.log('[BACKEND PENDIENTE] PATCH /api/usuarios/perfil/password (Hash generado con Bcrypt):', {
+      rut: perfil.rut,
+      nuevoHash: nuevoPasswordHash,
+    });
+
+    setPerfil((prev) => ({ ...prev, passwordHash: nuevoPasswordHash }));
+
+    if (onActualizarPassword) {
+      onActualizarPassword(perfil.rut, nuevoPasswordHash);
+    }
+
     setNuevaPass('');
     setConfirmarPass('');
     setErrorPass('');
     setCredRut('');
     setCredPassword('');
     setModalPasswordOpen(false);
-    setMensajeExitoPass('Contraseña actualizada correctamente.');
+    setMensajeExitoPass('Contraseña actualizada y hasheada correctamente con Bcrypt.');
     setTimeout(() => setMensajeExitoPass(''), 4000);
   };
 
   const handleGuardarDatos = (e) => {
     e.preventDefault();
+
+    if (!formData.nombres.trim() || !formData.apellidos.trim()) {
+      setAlertaPrincipal({ open: true, mensaje: 'Nombres y apellidos son obligatorios.', tipo: 'error' });
+      return;
+    }
+
+    if (!validarRut(formData.rut)) {
+      setAlertaPrincipal({ open: true, mensaje: 'El RUT ingresado no es válido.', tipo: 'error' });
+      return;
+    }
+
+    if (!formData.correo.trim()) {
+      setAlertaPrincipal({ open: true, mensaje: 'El correo electrónico es obligatorio.', tipo: 'error' });
+      return;
+    }
+
     setPerfil(formData);
     setEditando(false);
   };
@@ -146,15 +296,24 @@ export default function PerfilScreen() {
   const handleCancelarEdicion = () => {
     setFormData(perfil);
     setEditando(false);
+    setAlertaPrincipal({ open: false, mensaje: '', tipo: 'error' });
   };
 
   // Manejo de Teléfonos
-  const handleAgregarTelefono = () => {
-    if (!nuevoTel.trim()) return;
+  const handleAgregarTelefono = (e) => {
+    if (e) e.preventDefault();
+    const soloNumeros = nuevoTel.replace(/\D/g, '');
+
+    if (soloNumeros.length < 9) {
+      setErrorTel('Ingrese un teléfono válido de 9 dígitos (+56 9 XXXX XXXX).');
+      return;
+    }
+
     const actualizados = [...formData.telefonos, nuevoTel.trim()];
     setFormData((prev) => ({ ...prev, telefonos: actualizados }));
     setPerfil((prev) => ({ ...prev, telefonos: actualizados }));
     setNuevoTel('');
+    setErrorTel('');
   };
 
   const handleEliminarTelefono = () => {
@@ -166,13 +325,28 @@ export default function PerfilScreen() {
   };
 
   // Manejo de Direcciones
-  const handleAgregarDireccion = () => {
-    if (!nuevaDir.direccion.trim() || !nuevaDir.numero.trim()) return;
+  const handleAgregarDireccion = (e) => {
+    if (e) e.preventDefault();
+
+    if (!nuevaDir.direccion.trim()) {
+      setErrorDir('Ingrese el nombre de la dirección / calle.');
+      return;
+    }
+    if (!nuevaDir.numero.trim()) {
+      setErrorDir('Ingrese el número de la dirección (solo dígitos).');
+      return;
+    }
+    if (!nuevaDir.comuna.trim()) {
+      setErrorDir('Ingrese la comuna.');
+      return;
+    }
+
     const item = {
       ...nuevaDir,
       tipo: tipoInmueble,
       id: Date.now(),
     };
+
     const actualizadas = [...formData.direcciones, item];
     setFormData((prev) => ({ ...prev, direcciones: actualizadas }));
     setPerfil((prev) => ({ ...prev, direcciones: actualizadas }));
@@ -184,6 +358,7 @@ export default function PerfilScreen() {
       direccion: '',
       numero: '',
     });
+    setErrorDir('');
   };
 
   const handleEliminarDireccion = () => {
@@ -195,10 +370,11 @@ export default function PerfilScreen() {
   };
 
   return (
-    <MainLayout>
+    <MainLayout {...cartProps} currentUser={currentUser}>
       <Box sx={{ maxWidth: 860, width: '100%', mx: 'auto', p: { xs: 1.5, sm: 3 }, boxSizing: 'border-box' }}>
         <Box
           component={editando ? 'form' : 'div'}
+          noValidate
           onSubmit={editando ? handleGuardarDatos : undefined}
           sx={{
             width: '100%',
@@ -217,22 +393,17 @@ export default function PerfilScreen() {
             {editando ? 'Edite sus Datos' : 'Mi Perfil'}
           </Typography>
 
-          {mensajeExitoPass && (
-            <Box
-              sx={{
-                mb: 2,
-                p: 1.2,
-                bgcolor: 'rgba(46, 125, 50, 0.15)',
-                border: '1px solid #2e7d32',
-                borderRadius: '8px',
-                textAlign: 'center',
-              }}
-            >
-              <Typography variant="body2" sx={{ color: '#2e7d32', fontWeight: 600 }}>
-                {mensajeExitoPass}
-              </Typography>
-            </Box>
-          )}
+          <Collapse in={Boolean(mensajeExitoPass)} sx={{ mb: 2 }}>
+            <Alert severity="success" sx={{ borderRadius: '8px', fontSize: '0.88rem' }}>
+              {mensajeExitoPass}
+            </Alert>
+          </Collapse>
+
+          <Collapse in={alertaPrincipal.open} sx={{ mb: 2 }}>
+            <Alert severity={alertaPrincipal.tipo} sx={{ borderRadius: '8px', fontSize: '0.88rem' }}>
+              {alertaPrincipal.mensaje}
+            </Alert>
+          </Collapse>
 
           {!editando ? (
             /* ================= VISTA: VER PERFIL ================= */
@@ -264,6 +435,16 @@ export default function PerfilScreen() {
                 </Box>
 
                 <Box>
+                  <Typography variant="caption" sx={labelCaptionStyle}>Género</Typography>
+                  <Typography variant="body1" sx={valueTextStyle}>{perfil.genero || 'No especificado'}</Typography>
+                </Box>
+
+                <Box>
+                  <Typography variant="caption" sx={labelCaptionStyle}>Fecha de Nacimiento</Typography>
+                  <Typography variant="body1" sx={valueTextStyle}>{perfil.fechaNacimiento || 'No especificada'}</Typography>
+                </Box>
+
+                <Box>
                   <Typography variant="caption" sx={labelCaptionStyle}>Correo Electrónico</Typography>
                   <Typography variant="body1" sx={valueTextStyle}>{perfil.correo}</Typography>
                 </Box>
@@ -271,7 +452,9 @@ export default function PerfilScreen() {
                 <Box>
                   <Typography variant="caption" sx={labelCaptionStyle}>Teléfonos Registrados</Typography>
                   {perfil.telefonos.map((t, idx) => (
-                    <Typography key={idx} variant="body2" sx={valueTextStyle}>• {t}</Typography>
+                    <Typography key={idx} variant="body2" sx={valueTextStyle}>
+                      • {t}
+                    </Typography>
                   ))}
                 </Box>
 
@@ -293,7 +476,7 @@ export default function PerfilScreen() {
                   disableElevation
                   onClick={() => {
                     setErrorCred('');
-                    setCredRut('');
+                    setCredRut(perfil.rut || '');
                     setCredPassword('');
                     setModalCredencialesOpen(true);
                   }}
@@ -309,7 +492,7 @@ export default function PerfilScreen() {
                   onClick={() => {
                     setErrorCred('');
                     setErrorPass('');
-                    setCredRut('');
+                    setCredRut(perfil.rut || '');
                     setCredPassword('');
                     setNuevaPass('');
                     setConfirmarPass('');
@@ -338,7 +521,45 @@ export default function PerfilScreen() {
 
                   <Box>
                     <Typography variant="caption" sx={labelStyle}>RUT</Typography>
-                    <TextField fullWidth size="small" value={formData.rut} disabled sx={{ ...inputRectStyle, opacity: 0.8 }} />
+                    <TextField
+                      fullWidth
+                      size="small"
+                      value={formData.rut}
+                      onChange={handleChange('rut')}
+                      required
+                      slotProps={{ htmlInput: { maxLength: 12 } }}
+                      sx={inputRectStyle}
+                    />
+                  </Box>
+
+                  <Box>
+                    <Typography variant="caption" sx={labelStyle}>Género</Typography>
+                    <TextField
+                      select
+                      fullWidth
+                      size="small"
+                      value={formData.genero || 'Masculino'}
+                      onChange={handleChange('genero')}
+                      sx={inputRectStyle}
+                    >
+                      <MenuItem value="Masculino">Masculino</MenuItem>
+                      <MenuItem value="Femenino">Femenino</MenuItem>
+                      <MenuItem value="Otros">Otros</MenuItem>
+                      <MenuItem value="Prefiero no decirlo">Prefiero no decirlo</MenuItem>
+                    </TextField>
+                  </Box>
+
+                  <Box>
+                    <Typography variant="caption" sx={labelStyle}>Fecha de Nacimiento (DD/MM/AAAA)</Typography>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      placeholder="DD/MM/AAAA"
+                      value={formData.fechaNacimiento || ''}
+                      onChange={handleChange('fechaNacimiento')}
+                      slotProps={{ htmlInput: { maxLength: 10 } }}
+                      sx={inputRectStyle}
+                    />
                   </Box>
 
                   <Box>
@@ -429,6 +650,12 @@ export default function PerfilScreen() {
               Ingrese su Rut y su Contraseña
             </Typography>
 
+            <Collapse in={Boolean(errorCred)} sx={{ mb: 1.5, width: '100%' }}>
+              <Alert severity="error" sx={{ borderRadius: '6px', fontSize: '0.82rem', py: 0.2 }}>
+                {errorCred}
+              </Alert>
+            </Collapse>
+
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.8, mb: 3, textAlign: 'left' }}>
               <Box>
                 <Typography variant="caption" sx={labelStyle}>Rut</Typography>
@@ -438,6 +665,7 @@ export default function PerfilScreen() {
                   value={credRut}
                   onChange={(e) => setCredRut(formatearRut(e.target.value))}
                   required
+                  slotProps={{ htmlInput: { maxLength: 12 } }}
                   sx={inputRectStyle}
                 />
               </Box>
@@ -454,12 +682,6 @@ export default function PerfilScreen() {
                   sx={inputRectStyle}
                 />
               </Box>
-
-              {errorCred && (
-                <Typography variant="caption" sx={{ color: 'red', fontWeight: 600 }}>
-                  {errorCred}
-                </Typography>
-              )}
             </Box>
 
             <Button type="submit" fullWidth variant="contained" disableElevation sx={botonFigmaRectangular}>
@@ -496,6 +718,12 @@ export default function PerfilScreen() {
               Confirme sus credenciales actuales para cambiar la clave.
             </Typography>
 
+            <Collapse in={Boolean(errorCred)} sx={{ mb: 1.5, width: '100%' }}>
+              <Alert severity="error" sx={{ borderRadius: '6px', fontSize: '0.82rem', py: 0.2 }}>
+                {errorCred}
+              </Alert>
+            </Collapse>
+
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.8, mb: 3, textAlign: 'left' }}>
               <Box>
                 <Typography variant="caption" sx={labelStyle}>Rut</Typography>
@@ -505,6 +733,7 @@ export default function PerfilScreen() {
                   value={credRut}
                   onChange={(e) => setCredRut(formatearRut(e.target.value))}
                   required
+                  slotProps={{ htmlInput: { maxLength: 12 } }}
                   sx={inputRectStyle}
                 />
               </Box>
@@ -521,12 +750,6 @@ export default function PerfilScreen() {
                   sx={inputRectStyle}
                 />
               </Box>
-
-              {errorCred && (
-                <Typography variant="caption" sx={{ color: 'red', fontWeight: 600 }}>
-                  {errorCred}
-                </Typography>
-              )}
             </Box>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -571,6 +794,12 @@ export default function PerfilScreen() {
               Nueva Contraseña
             </Typography>
 
+            <Collapse in={Boolean(errorPass)} sx={{ mb: 1.5, width: '100%' }}>
+              <Alert severity="error" sx={{ borderRadius: '6px', fontSize: '0.82rem', py: 0.2 }}>
+                {errorPass}
+              </Alert>
+            </Collapse>
+
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.8, mb: 3, textAlign: 'left' }}>
               <Box>
                 <Typography variant="caption" sx={labelStyle}>Nueva Contraseña</Typography>
@@ -597,12 +826,6 @@ export default function PerfilScreen() {
                   sx={inputRectStyle}
                 />
               </Box>
-
-              {errorPass && (
-                <Typography variant="caption" sx={{ color: 'red', fontWeight: 600 }}>
-                  {errorPass}
-                </Typography>
-              )}
             </Box>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -640,6 +863,16 @@ export default function PerfilScreen() {
               flexDirection: 'column',
             }}
           >
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, color: 'var(--color-texto-oscuro)', textAlign: 'center' }}>
+              Editar Teléfonos
+            </Typography>
+
+            <Collapse in={Boolean(errorTel)} sx={{ mb: 1.5, width: '100%' }}>
+              <Alert severity="error" sx={{ borderRadius: '6px', fontSize: '0.82rem', py: 0.2 }}>
+                {errorTel}
+              </Alert>
+            </Collapse>
+
             <Box
               sx={{
                 width: '100%',
@@ -666,7 +899,7 @@ export default function PerfilScreen() {
                     sx={{
                       p: 0.8,
                       cursor: 'pointer',
-                      bgcolor: telSeleccionado === tel ? 'var(--color-fondo)' : 'transparent',
+                      bgcolor: telSeleccionado === tel ? 'rgba(195, 85, 43, 0.15)' : 'transparent',
                       border: telSeleccionado === tel ? '1px solid var(--color-primario)' : '1px solid transparent',
                     }}
                   >
@@ -679,12 +912,19 @@ export default function PerfilScreen() {
             </Box>
 
             <Box sx={{ mb: 2 }}>
+              <Typography variant="caption" sx={labelStyle}>
+                Nuevo Teléfono (Solo números):
+              </Typography>
               <TextField
                 fullWidth
                 size="small"
-                placeholder="Ingrese nuevo teléfono"
+                placeholder="+56 9 1234 5678"
                 value={nuevoTel}
-                onChange={(e) => setNuevoTel(e.target.value)}
+                onChange={(e) => {
+                  setNuevoTel(formatearTelefono(e.target.value));
+                  if (errorTel) setErrorTel('');
+                }}
+                slotProps={{ htmlInput: { maxLength: 16 } }}
                 sx={inputRectStyle}
               />
             </Box>
@@ -731,6 +971,16 @@ export default function PerfilScreen() {
               boxSizing: 'border-box',
             }}
           >
+            <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, color: 'var(--color-texto-oscuro)', textAlign: 'center' }}>
+              Editar Direcciones
+            </Typography>
+
+            <Collapse in={Boolean(errorDir)} sx={{ mb: 1.5, width: '100%' }}>
+              <Alert severity="error" sx={{ borderRadius: '6px', fontSize: '0.82rem', py: 0.2 }}>
+                {errorDir}
+              </Alert>
+            </Collapse>
+
             <Box
               sx={{
                 width: '100%',
@@ -757,12 +1007,12 @@ export default function PerfilScreen() {
                     sx={{
                       p: 0.8,
                       cursor: 'pointer',
-                      bgcolor: dirSeleccionada?.id === d.id ? 'var(--color-fondo)' : 'transparent',
+                      bgcolor: dirSeleccionada?.id === d.id ? 'rgba(195, 85, 43, 0.15)' : 'transparent',
                       border: dirSeleccionada?.id === d.id ? '1px solid var(--color-primario)' : '1px solid transparent',
                     }}
                   >
                     <Typography variant="body2" sx={{ color: 'var(--color-texto-oscuro)', fontWeight: 500, fontSize: '0.85rem' }}>
-                      [{d.tipo}] {d.direccion} #{d.numero}, {d.comuna} - CP: {d.codigoPostal || 'S/N'} ({d.region})
+                      [{d.tipo}] {d.direccion} #{d.numero}, {d.comuna} {d.codigoPostal ? `(CP: ${d.codigoPostal})` : ''}
                     </Typography>
                   </Box>
                 ))
@@ -829,12 +1079,13 @@ export default function PerfilScreen() {
               </Box>
 
               <Box>
-                <Typography variant="caption" sx={labelStyle}>Ingrese Código Postal</Typography>
+                <Typography variant="caption" sx={labelStyle}>Ingrese Código Postal (Solo números)</Typography>
                 <TextField
                   fullWidth
                   size="small"
                   value={nuevaDir.codigoPostal}
-                  onChange={(e) => setNuevaDir({ ...nuevaDir, codigoPostal: e.target.value })}
+                  onChange={(e) => setNuevaDir({ ...nuevaDir, codigoPostal: e.target.value.replace(/\D/g, '') })}
+                  slotProps={{ htmlInput: { maxLength: 7 } }}
                   sx={inputRectStyle}
                 />
               </Box>
@@ -851,12 +1102,13 @@ export default function PerfilScreen() {
               </Box>
 
               <Box>
-                <Typography variant="caption" sx={labelStyle}>Ingrese Número de Dirección</Typography>
+                <Typography variant="caption" sx={labelStyle}>Ingrese Número de Dirección (Solo números)</Typography>
                 <TextField
                   fullWidth
                   size="small"
                   value={nuevaDir.numero}
-                  onChange={(e) => setNuevaDir({ ...nuevaDir, numero: e.target.value })}
+                  onChange={(e) => setNuevaDir({ ...nuevaDir, numero: e.target.value.replace(/\D/g, '') })}
+                  slotProps={{ htmlInput: { maxLength: 8 } }}
                   sx={inputRectStyle}
                 />
               </Box>

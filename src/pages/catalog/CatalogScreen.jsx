@@ -1,79 +1,93 @@
-import { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Chip from '@mui/material/Chip';
+import Pagination from '@mui/material/Pagination';
+import StorefrontIcon from '@mui/icons-material/Storefront';
+
 import MainLayout from '../../components/templates/MainLayout/MainLayout';
 import CatalogList from '../../components/organisms/CatalogList/CatalogList';
-import ProductDetail from '../../components/organisms/ProductDetail/ProductDetail';
-import CartModal from '../../components/organisms/CartModal/CartModal';
 import PaymentModal from '../../components/organisms/PaymentModal/PaymentModal';
 import AddressModal from '../../components/organisms/AddressModal/AddressModal';
 
-export default function CatalogScreen({ productos, favoritos, onToggleFavorito }) {
-  const [selected, setSelected] = useState(null);
-  const [isCartOpen, setIsCartOpen] = useState(false);
+const LIMITE_POR_PAGINA = 40;
+
+export default function CatalogScreen({
+  productos = [],
+  favoritos = [],
+  onToggleFavorito,
+  cartProps = {},
+  vendedorFiltrado = null,
+  onLimpiarFiltroVendedor,
+}) {
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [isAddressOpen, setIsAddressOpen] = useState(false);
 
-  // Lista de direcciones guardadas para el despacho
+  // Control de pestaña actual ('productos' o 'servicios') y página activa
+  const [tabActual, setTabActual] = useState('productos');
+  const [paginaActual, setPaginaActual] = useState(1);
+
   const [direcciones, setDirecciones] = useState([
     { direccion: 'Av. Las Condes', numero: '1234', comuna: 'Las Condes', tipoLugar: 'Casa/Depto.' },
     { direccion: 'Providencia', numero: '567', comuna: 'Providencia', tipoLugar: 'oficina' },
   ]);
 
-  // Estado del carrito inicializado con los elementos del diseño de Figma
-  const [cartItems, setCartItems] = useState([
-    { id: 1, nombre: 'producto 1', valor: 12000, cantidad: 2, vendedor: 'Tienda Oficial' },
-    { id: 2, nombre: 'producto 2', valor: 7000, cantidad: 1, vendedor: 'Tienda Oficial' },
-    { id: 5, nombre: 'producto 5', valor: 8000, cantidad: 2, vendedor: 'Tienda Oficial' },
-    { id: 7, nombre: 'producto 7', valor: 10000, cantidad: 1, vendedor: 'Tienda Oficial' },
-  ]);
+  // Al cambiar de pestaña, se resetea la página a 1
+  const handleCambiarTab = (nuevoTab) => {
+    setTabActual(nuevoTab);
+    setPaginaActual(1);
+  };
 
-  const productosfiltrados = productos.filter((p) => p.tipo !== 'servicio');
-  const serviciosfiltrados = productos.filter((p) => p.tipo === 'servicio');
+  // 1. Filtrado por vendedor
+  const productosFiltradosPorVendedor = useMemo(() => {
+    return vendedorFiltrado
+      ? productos.filter((p) => (p.vendedor || 'Tienda Oficial') === vendedorFiltrado)
+      : productos;
+  }, [productos, vendedorFiltrado]);
 
-  const totalCalculado = cartItems.reduce(
+  // 2. Separación de listas completas
+  const listaProductosCompleta = useMemo(() => {
+    return productosFiltradosPorVendedor.filter((p) => p.tipo !== 'servicio');
+  }, [productosFiltradosPorVendedor]);
+
+  const listaServiciosCompleta = useMemo(() => {
+    return productosFiltradosPorVendedor.filter((p) => p.tipo === 'servicio');
+  }, [productosFiltradosPorVendedor]);
+
+  // 3. Cálculo de páginas según la pestaña activa
+  const itemsActivos = tabActual === 'productos' ? listaProductosCompleta : listaServiciosCompleta;
+  const totalPaginas = Math.ceil(itemsActivos.length / LIMITE_POR_PAGINA) || 1;
+
+  // 4. Corte de 40 elementos para la página actual
+  const productosPaginados = useMemo(() => {
+    const inicio = (paginaActual - 1) * LIMITE_POR_PAGINA;
+    return listaProductosCompleta.slice(inicio, inicio + LIMITE_POR_PAGINA);
+  }, [listaProductosCompleta, paginaActual]);
+
+  const serviciosPaginados = useMemo(() => {
+    const inicio = (paginaActual - 1) * LIMITE_POR_PAGINA;
+    return listaServiciosCompleta.slice(inicio, inicio + LIMITE_POR_PAGINA);
+  }, [listaServiciosCompleta, paginaActual]);
+
+  const handleCambioPagina = (event, valor) => {
+    setPaginaActual(valor);
+    console.log('[BACKEND PENDIENTE] GET /api/catalogo', {
+      tipo: tabActual,
+      page: valor,
+      limit: LIMITE_POR_PAGINA,
+      vendedor: vendedorFiltrado || 'todos',
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const totalCalculado = (cartProps.cartItems || []).reduce(
     (acc, item) => acc + (Number(item.valor) || 0) * (Number(item.cantidad) || 1),
     0
   );
 
-  const handleUpdateQuantity = (id, nuevaCantidad) => {
-    if (nuevaCantidad <= 0) {
-      setCartItems((prev) => prev.filter((item) => item.id !== id));
-    } else {
-      setCartItems((prev) =>
-        prev.map((item) =>
-          item.id === id ? { ...item, cantidad: nuevaCantidad } : item
-        )
-      );
-    }
-  };
-
-  const handleAddToCart = (producto) => {
-    setCartItems((prev) => {
-      const existe = prev.find((item) => item.id === producto.id);
-      if (existe) {
-        return prev.map((item) =>
-          item.id === producto.id
-            ? { ...item, cantidad: (item.cantidad || 1) + 1 }
-            : item
-        );
-      }
-      return [...prev, { ...producto, cantidad: 1, vendedor: producto.vendedor || 'Tienda Oficial' }];
-    });
-    setIsCartOpen(true);
-  };
-
-  const handleCotizar = (items) => {
-    console.log('Cotizando pedido:', items);
-    alert('Cotización generada correctamente');
-  };
-
-  // Acción del botón Pagar: Cierra el carrito y despliega la pasarela de pago
   const handlePagar = () => {
-    setIsCartOpen(false);
+    if (cartProps.onCloseCart) cartProps.onCloseCart();
     setIsPaymentOpen(true);
-  };
-
-  const handleFiltrarVendedor = (vendedor) => {
-    console.log('Filtrando por vendedor:', vendedor);
   };
 
   const handleAgregarDireccion = (nuevaDir) => {
@@ -81,43 +95,91 @@ export default function CatalogScreen({ productos, favoritos, onToggleFavorito }
   };
 
   const handlePagoCompletado = (orden) => {
-    console.log('Orden completada con éxito:', orden);
-    setCartItems([]); // Vacía el carrito una vez finalizado el pago
+    console.log('[BACKEND PENDIENTE] POST /api/ordenes/checkout', orden);
     setIsPaymentOpen(false);
   };
 
   return (
-    <MainLayout onOpenCart={() => setIsCartOpen(true)}>
-      {selected ? (
-        <ProductDetail 
-          item={selected} 
-          onBack={() => setSelected(null)} 
-          favoritos={favoritos} 
-          onToggleFavorito={onToggleFavorito}
-          onAddToCart={handleAddToCart}
-        />
-      ) : (
-        <CatalogList
-          productos={productosfiltrados}
-          servicios={serviciosfiltrados}
-          onSelectItem={setSelected}
-          favoritos={favoritos}
-          onToggleFavorito={onToggleFavorito}
-        />
+    <MainLayout {...cartProps} onPagar={handlePagar}>
+      {/* Banner de filtro por vendedor */}
+      {vendedorFiltrado && (
+        <Box
+          sx={{
+            maxWidth: 1000,
+            mx: 'auto',
+            mb: 2.5,
+            p: 1.5,
+            bgcolor: 'rgba(195, 85, 43, 0.12)',
+            border: '1.2px solid var(--color-primario)',
+            borderRadius: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 1.5,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <StorefrontIcon sx={{ color: 'var(--color-primario)' }} />
+            <Typography sx={{ fontWeight: 600, fontSize: '0.92rem', color: 'var(--color-texto-oscuro)' }}>
+              Mostrando solo artículos de: <strong>{vendedorFiltrado}</strong>
+            </Typography>
+          </Box>
+          <Chip
+            label="Quitar filtro"
+            size="small"
+            onDelete={onLimpiarFiltroVendedor}
+            onClick={onLimpiarFiltroVendedor}
+            sx={{
+              bgcolor: 'var(--color-primario)',
+              color: 'var(--color-texto-claro)',
+              fontWeight: 600,
+              '& .MuiChip-deleteIcon': { color: 'var(--color-texto-claro)' },
+            }}
+          />
+        </Box>
       )}
 
-      {/* Modal del Carrito de Compras */}
-      <CartModal
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        cartItems={cartItems}
-        onUpdateQuantity={handleUpdateQuantity}
-        onCotizar={handleCotizar}
-        onPagar={handlePagar}
-        onFiltrarVendedor={handleFiltrarVendedor}
+      {/* Lista del catálogo sincronizada con el estado de pestaña */}
+      <CatalogList
+        productos={productosPaginados}
+        servicios={serviciosPaginados}
+        tab={tabActual}
+        onTabChange={handleCambiarTab}
+        favoritos={favoritos}
+        onToggleFavorito={onToggleFavorito}
       />
 
-      {/* Modal de Pago (Figma) */}
+      {/* Paginador (se calcula dinámicamente con los 60 productos o 60 servicios) */}
+      {totalPaginas > 1 && (
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            mt: 4,
+            mb: 3,
+          }}
+        >
+          <Pagination
+            count={totalPaginas}
+            page={paginaActual}
+            onChange={handleCambioPagina}
+            sx={{
+              '& .MuiPaginationItem-root': {
+                borderRadius: '10px',
+                fontWeight: 600,
+                color: 'var(--color-texto-oscuro)',
+                '&.Mui-selected': {
+                  bgcolor: 'var(--color-primario) !important',
+                  color: 'var(--color-texto-claro)',
+                },
+              },
+            }}
+          />
+        </Box>
+      )}
+
+      {/* Modales */}
       <PaymentModal
         open={isPaymentOpen}
         onClose={() => setIsPaymentOpen(false)}
@@ -127,7 +189,6 @@ export default function CatalogScreen({ productos, favoritos, onToggleFavorito }
         onPagoCompletado={handlePagoCompletado}
       />
 
-      {/* Modal de Agregar Dirección */}
       <AddressModal
         open={isAddressOpen}
         onClose={() => setIsAddressOpen(false)}
