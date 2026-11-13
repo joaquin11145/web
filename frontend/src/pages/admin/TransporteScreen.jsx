@@ -8,17 +8,35 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
 import AddIcon from '@mui/icons-material/Add';
 import MainLayout from '../../components/templates/MainLayout/MainLayout';
+import { useCrudFeedback } from '../../components/organisms/CrudFeedback/CrudFeedbackProvider';
 
 export default function TransporteScreen({ zonas = [], onToggleHabilitar, cartProps = {} }) {
   const navigate = useNavigate();
+  const { confirmarAccion, mostrarExito, mostrarError } = useCrudFeedback();
 
   const formatCLP = (m) => Number(m || 0).toLocaleString('es-CL');
+
+  const handleToggleConfirmado = (zona) => {
+    const accionTexto = zona.habilitada ? 'deshabilitar' : 'habilitar';
+    confirmarAccion({
+      titulo: `Confirmar Cambio de Estado de Zona`,
+      mensaje: `¿Deseas ${accionTexto} la zona de entrega "${zona.nombre}" (${zona.region})?`,
+      textoConfirmar: zona.habilitada ? 'Deshabilitar' : 'Habilitar',
+      esDestructivo: zona.habilitada,
+      onConfirmar: () => {
+        try {
+          if (onToggleHabilitar) onToggleHabilitar(zona.id);
+          mostrarExito(`Zona "${zona.nombre}" ${zona.habilitada ? 'deshabilitada' : 'habilitada'} correctamente.`);
+        } catch (err) {
+          mostrarError('No se pudo actualizar el estado de la zona de transporte.');
+        }
+      },
+    });
+  };
 
   return (
     <MainLayout {...cartProps}>
       <Box sx={{ maxWidth: 880, mx: 'auto', p: { xs: 1.5, sm: 3 }, pb: 6 }}>
-        
-        {/* Botón Volver */}
         <Button
           startIcon={<ArrowBackIcon />}
           onClick={() => navigate('/admin')}
@@ -32,7 +50,6 @@ export default function TransporteScreen({ zonas = [], onToggleHabilitar, cartPr
           Volver a Administrar
         </Button>
 
-        {/* Cabecera */}
         <Box
           sx={{
             display: 'flex',
@@ -87,7 +104,6 @@ export default function TransporteScreen({ zonas = [], onToggleHabilitar, cartPr
           Zonas de Entrega
         </Typography>
 
-        {/* Lista de Zonas Configuradas */}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.8 }}>
           {zonas.length === 0 ? (
             <Typography variant="body2" sx={{ color: 'var(--color-borde)', textAlign: 'center', py: 4 }}>
@@ -172,7 +188,7 @@ export default function TransporteScreen({ zonas = [], onToggleHabilitar, cartPr
                   <Button
                     variant="contained"
                     disableElevation
-                    onClick={() => onToggleHabilitar && onToggleHabilitar(zona.id)}
+                    onClick={() => handleToggleConfirmado(zona)}
                     sx={{
                       ...botonHabilitarStyle,
                       bgcolor: zona.habilitada ? 'var(--color-primario)' : 'var(--color-input-bg)',

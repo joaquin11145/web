@@ -2,45 +2,49 @@ import React, { useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import Alert from '@mui/material/Alert';
+import Collapse from '@mui/material/Collapse';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import MainLayout from '../../components/templates/MainLayout/MainLayout';
 import CustomButton from '../../components/atoms/Button/CustomButton';
+import { generarCotizacionPDF } from '../../utils/pdfGenerator';
 
 const cotizacionesEjemplo = [
   {
     id: 1,
     codigo: 'COT-001',
     vendedor: 'Tienda Oficial',
-    estado: 'Válida',
+    estado: 'Aceptada por el cliente',
     fechaEmision: '20 de Oct. de 2026',
     fechaVence: '04 de Nov. de 2026',
     items: [
       { id: 1, nombre: 'Polera Deportiva', valor: 12000, cantidad: 2, tallaSeleccionada: 'M', colorSeleccionado: 'Rojo' },
-      { id: 2, nombre: 'Producto 2', valor: 7000, cantidad: 1, tallaSeleccionada: '38', colorSeleccionado: 'Rojo' },
+      { id: 2, nombre: 'Zapatillas Urbanas', valor: 7000, cantidad: 1, tallaSeleccionada: '38', colorSeleccionado: 'Negro' },
     ],
   },
   {
     id: 2,
     codigo: 'COT-002',
-    vendedor: 'Textiles del Sur',
-    estado: 'Pendiente',
-    fechaEmision: '24 de Oct. de 2026',
-    fechaVence: '08 de Nov. de 2026',
+    vendedor: 'Textiles del Sur SpA',
+    estado: 'Respondida',
+    fechaEmision: '05 de Nov. de 2026',
+    fechaVence: '20 de Nov. de 2026',
     items: [
-      { id: 3, nombre: 'Producto 3', valor: 12000, cantidad: 3, tallaSeleccionada: '40', colorSeleccionado: 'Verde' },
+      { id: 3, nombre: 'Pack Polerones Corporativos', valor: 12000, cantidad: 3, tallaSeleccionada: 'L', colorSeleccionado: 'Verde' },
     ],
   },
   {
     id: 3,
     codigo: 'COT-003',
     vendedor: 'Tienda Oficial',
-    estado: 'Vencida',
+    estado: 'Expirada',
     fechaEmision: '01 de Oct. de 2026',
     fechaVence: '16 de Oct. de 2026',
     items: [
-      { id: 1, nombre: 'Polera', valor: 12000, cantidad: 1, tallaSeleccionada: 'L', colorSeleccionado: 'Amarillo' },
+      { id: 1, nombre: 'Polera Estampada', valor: 12000, cantidad: 1, tallaSeleccionada: 'L', colorSeleccionado: 'Amarillo' },
     ],
   },
 ];
@@ -52,9 +56,11 @@ export default function HistorialCotizaciones({ cartProps = {}, onAddToCart }) {
   const [cotizaciones, setCotizaciones] = useState(cotizacionesEjemplo);
   const [cotizacionActiva, setCotizacionActiva] = useState(cotizacionesEjemplo[0]);
   const [vistaMovil, setVistaMovil] = useState('lista');
+  const [alertaMsg, setAlertaMsg] = useState('');
 
   const handleSeleccionarCotizacion = (cot) => {
     setCotizacionActiva(cot);
+    setAlertaMsg('');
     if (esMovil) {
       setVistaMovil('detalle');
     }
@@ -66,16 +72,14 @@ export default function HistorialCotizaciones({ cartProps = {}, onAddToCart }) {
 
   const formatCLP = (monto) => Number(monto || 0).toLocaleString('es-CL');
 
-  // Calcular el total de la cotización activa
   const totalActivo = cotizacionActiva.items.reduce(
     (acc, curr) => acc + (Number(curr.valor) || 0) * (Number(curr.cantidad) || 1),
     0
   );
 
-  // Acción interactiva: Pasar todos los productos de la cotización al carrito
   const handleAceptarYPasarAlCarrito = () => {
-    if (cotizacionActiva.estado === 'Vencida') {
-      alert('Esta cotización ha vencido y no se puede procesar.');
+    if (cotizacionActiva.estado === 'Expirada') {
+      setAlertaMsg('Esta cotización superó su plazo de 15 días y ha expirado.');
       return;
     }
     if (onAddToCart) {
@@ -88,12 +92,15 @@ export default function HistorialCotizaciones({ cartProps = {}, onAddToCart }) {
     }
   };
 
-  // Acción interactiva: Cancelar o rechazar cotización
   const handleAnularCotizacion = () => {
     setCotizaciones((prev) =>
-      prev.map((c) => (c.id === cotizacionActiva.id ? { ...c, estado: 'Anulada' } : c))
+      prev.map((c) => (c.id === cotizacionActiva.id ? { ...c, estado: 'Expirada' } : c))
     );
-    setCotizacionActiva((prev) => ({ ...prev, estado: 'Anulada' }));
+    setCotizacionActiva((prev) => ({ ...prev, estado: 'Expirada' }));
+  };
+
+  const handleExportarCotizacionPDF = () => {
+    generarCotizacionPDF(cotizacionActiva, cartProps?.currentUser);
   };
 
   return (
@@ -186,9 +193,9 @@ export default function HistorialCotizaciones({ cartProps = {}, onAddToCart }) {
                         fontSize: '0.75rem',
                         fontWeight: 600,
                         color:
-                          cot.estado === 'Válida'
+                          cot.estado === 'Aceptada por el cliente'
                             ? '#2e7d32'
-                            : cot.estado === 'Vencida' || cot.estado === 'Anulada'
+                            : cot.estado === 'Expirada'
                             ? '#d32f2f'
                             : 'var(--color-primario)',
                       }}
@@ -197,7 +204,7 @@ export default function HistorialCotizaciones({ cartProps = {}, onAddToCart }) {
                     </Typography>
                   </Box>
                   <Typography variant="caption" sx={{ color: 'var(--color-borde)', display: 'block' }}>
-                    Vence: {cot.fechaVence}
+                    Expiración (15 días): {cot.fechaVence}
                   </Typography>
                 </Box>
               );
@@ -221,36 +228,63 @@ export default function HistorialCotizaciones({ cartProps = {}, onAddToCart }) {
             boxSizing: 'border-box',
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-            {esMovil && (
-              <IconButton
-                size="small"
-                onClick={handleVolverALista}
-                sx={{ color: 'var(--color-primario)', mr: 0.5 }}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, mb: 1.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {esMovil && (
+                <IconButton
+                  size="small"
+                  onClick={handleVolverALista}
+                  sx={{ color: 'var(--color-primario)', mr: 0.5 }}
+                >
+                  <ArrowBackIcon />
+                </IconButton>
+              )}
+              <Typography
+                sx={{
+                  fontWeight: 800,
+                  fontSize: '1.35rem',
+                  color: 'var(--color-texto-oscuro)',
+                }}
               >
-                <ArrowBackIcon />
-              </IconButton>
-            )}
-            <Typography
-              sx={{
-                fontWeight: 800,
-                fontSize: '1.4rem',
-                color: 'var(--color-texto-oscuro)',
-              }}
-            >
-              Detalle de Cotización ({cotizacionActiva.codigo})
-            </Typography>
+                Cotización ({cotizacionActiva.codigo})
+              </Typography>
+            </Box>
+
+            <Box sx={{ minWidth: 210 }}>
+              <CustomButton
+                pill
+                outlined
+                onClick={handleExportarCotizacionPDF}
+                sx={{
+                  borderColor: 'var(--color-primario)',
+                  color: 'var(--color-primario)',
+                  fontSize: '0.84rem',
+                }}
+              >
+                <PictureAsPdfIcon sx={{ fontSize: 18, mr: 0.8 }} />
+                Exportar Cotización PDF
+              </CustomButton>
+            </Box>
           </Box>
 
+          <Collapse in={Boolean(alertaMsg)} sx={{ mb: 2 }}>
+            <Alert severity="warning" sx={{ borderRadius: '8px', fontSize: '0.84rem' }}>
+              {alertaMsg}
+            </Alert>
+          </Collapse>
+
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 3 }}>
-            <Typography sx={{ fontSize: '0.92rem', color: 'var(--color-texto-oscuro)' }}>
+            <Typography sx={{ fontSize: '0.9rem', color: 'var(--color-texto-oscuro)' }}>
               <strong>Vendedor:</strong> {cotizacionActiva.vendedor}
             </Typography>
-            <Typography sx={{ fontSize: '0.92rem', color: 'var(--color-texto-oscuro)' }}>
-              <strong>Estado:</strong> {cotizacionActiva.estado}
+            <Typography sx={{ fontSize: '0.9rem', color: 'var(--color-texto-oscuro)' }}>
+              <strong>Emisión:</strong> {cotizacionActiva.fechaEmision}
             </Typography>
-            <Typography sx={{ fontSize: '0.92rem', color: 'var(--color-texto-oscuro)' }}>
-              <strong>Vence:</strong> {cotizacionActiva.fechaVence}
+            <Typography sx={{ fontSize: '0.9rem', color: 'var(--color-texto-oscuro)' }}>
+              <strong>Expiración (15 días):</strong> {cotizacionActiva.fechaVence}
+            </Typography>
+            <Typography sx={{ fontSize: '0.9rem', color: 'var(--color-texto-oscuro)' }}>
+              <strong>Estado:</strong> {cotizacionActiva.estado}
             </Typography>
           </Box>
 
@@ -268,7 +302,7 @@ export default function HistorialCotizaciones({ cartProps = {}, onAddToCart }) {
             }}
           >
             <Typography sx={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--color-texto-oscuro)' }}>
-              Artículos incluidos:
+              Artículos y Valores Vigentes:
             </Typography>
 
             {cotizacionActiva.items.map((item, idx) => (
@@ -314,7 +348,7 @@ export default function HistorialCotizaciones({ cartProps = {}, onAddToCart }) {
               <CustomButton
                 pill
                 onClick={handleAceptarYPasarAlCarrito}
-                disabled={cotizacionActiva.estado === 'Vencida' || cotizacionActiva.estado === 'Anulada'}
+                disabled={cotizacionActiva.estado === 'Expirada'}
               >
                 Pagar Cotización
               </CustomButton>
@@ -325,7 +359,7 @@ export default function HistorialCotizaciones({ cartProps = {}, onAddToCart }) {
                 pill
                 outlined
                 onClick={handleAnularCotizacion}
-                disabled={cotizacionActiva.estado === 'Vencida' || cotizacionActiva.estado === 'Anulada'}
+                disabled={cotizacionActiva.estado === 'Expirada'}
                 sx={{
                   borderColor: 'var(--color-texto-oscuro)',
                   color: 'var(--color-texto-oscuro)',

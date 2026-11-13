@@ -4,10 +4,12 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import MainLayout from '../../components/templates/MainLayout/MainLayout';
 import CustomButton from '../../components/atoms/Button/CustomButton';
+import { generarComprobanteVentaPDF } from '../../utils/pdfGenerator';
 
 const listaPedidosEjemplo = [
   {
@@ -15,6 +17,7 @@ const listaPedidosEjemplo = [
     nombre: 'Pedido 1',
     estado: 'Entregado',
     producto: 'Polera Deportiva Roja',
+    items: [{ nombre: 'Polera Deportiva Roja', cantidad: 2, valor: 12000 }],
     metodoPago: 'Débito / Crédito',
     detallePago: 'Transacción aprobada (Visa **** 3456)',
     numeroSeguimiento: '60346032',
@@ -26,8 +29,9 @@ const listaPedidosEjemplo = [
   {
     id: 2,
     nombre: 'Pedido 2',
-    estado: 'En tránsito',
+    estado: 'Enviado',
     producto: 'Zapatillas Urbanas Talla 38',
+    items: [{ nombre: 'Zapatillas Urbanas Talla 38', cantidad: 1, valor: 7000 }],
     metodoPago: 'Transferencia Bancaria',
     detallePago: 'Comprobante TRX-983210 verificado',
     numeroSeguimiento: '71984210',
@@ -41,6 +45,7 @@ const listaPedidosEjemplo = [
     nombre: 'Pedido 3',
     estado: 'Entregado',
     producto: 'Pack 2 Polerones Negros',
+    items: [{ nombre: 'Pack 2 Polerones Negros', cantidad: 1, valor: 16000 }],
     metodoPago: 'Débito / Crédito',
     detallePago: 'Transacción aprobada (MasterCard **** 1209)',
     numeroSeguimiento: '55129031',
@@ -54,6 +59,7 @@ const listaPedidosEjemplo = [
     nombre: 'Pedido 4',
     estado: 'En preparación',
     producto: 'Accesorios Deportivos Varios',
+    items: [{ nombre: 'Accesorios Deportivos Varios', cantidad: 1, valor: 10000 }],
     metodoPago: 'Transferencia Bancaria',
     detallePago: 'Comprobante TRX-541209 verificado',
     numeroSeguimiento: '88301923',
@@ -92,7 +98,13 @@ export default function HistorialPedidos({ cartProps = {} }) {
     navigate('/seguimiento', { state: { pedido: pedidoActivo } });
   };
 
-  const formatCLP = (monto) => monto.toLocaleString('es-CL');
+  const handleExportarComprobantePDF = () => {
+    generarComprobanteVentaPDF(pedidoActivo, cartProps?.currentUser);
+  };
+
+  const formatCLP = (monto) => Number(monto || 0).toLocaleString('es-CL');
+  const valorNetoActivo = Math.round((Number(pedidoActivo.total) || 0) / 1.19);
+  const ivaActivo = (Number(pedidoActivo.total) || 0) - valorNetoActivo;
 
   return (
     <MainLayout {...cartProps}>
@@ -174,6 +186,9 @@ export default function HistorialPedidos({ cartProps = {} }) {
                   >
                     {pedido.nombre}
                   </Typography>
+                  <Typography variant="caption" sx={{ color: 'var(--color-borde)', display: 'block' }}>
+                    {pedido.estado} • ${formatCLP(pedido.total)}
+                  </Typography>
                 </Box>
               );
             })}
@@ -195,25 +210,43 @@ export default function HistorialPedidos({ cartProps = {} }) {
             boxSizing: 'border-box',
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-            {esMovil && (
-              <IconButton
-                size="small"
-                onClick={handleVolverALista}
-                sx={{ color: 'var(--color-primario)', mr: 0.5 }}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, mb: 1.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {esMovil && (
+                <IconButton
+                  size="small"
+                  onClick={handleVolverALista}
+                  sx={{ color: 'var(--color-primario)', mr: 0.5 }}
+                >
+                  <ArrowBackIcon />
+                </IconButton>
+              )}
+              <Typography
+                sx={{
+                  fontWeight: 800,
+                  fontSize: '1.4rem',
+                  color: 'var(--color-texto-oscuro)',
+                }}
               >
-                <ArrowBackIcon />
-              </IconButton>
-            )}
-            <Typography
-              sx={{
-                fontWeight: 800,
-                fontSize: '1.4rem',
-                color: 'var(--color-texto-oscuro)',
-              }}
-            >
-              Pedidos
-            </Typography>
+                Detalle del Pedido
+              </Typography>
+            </Box>
+
+            <Box sx={{ minWidth: 230 }}>
+              <CustomButton
+                pill
+                outlined
+                onClick={handleExportarComprobantePDF}
+                sx={{
+                  borderColor: 'var(--color-primario)',
+                  color: 'var(--color-primario)',
+                  fontSize: '0.84rem',
+                }}
+              >
+                <PictureAsPdfIcon sx={{ fontSize: 18, mr: 0.8 }} />
+                Boleta / Factura PDF
+              </CustomButton>
+            </Box>
           </Box>
 
           <Typography
@@ -229,49 +262,64 @@ export default function HistorialPedidos({ cartProps = {} }) {
 
           <Box
             sx={{
-              width: 140,
-              height: 140,
+              width: 120,
+              height: 120,
               bgcolor: 'var(--color-input-bg)',
               border: '1px solid var(--color-borde)',
               borderRadius: '4px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '1.2rem',
+              fontSize: '1.1rem',
               color: 'var(--color-texto-oscuro)',
-              mb: 3,
+              mb: 2.5,
             }}
           >
             foto
           </Box>
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.8, mb: 4, maxWidth: 500 }}>
-            <Box>
-              <Typography sx={{ fontSize: '0.92rem', color: 'var(--color-texto-oscuro)' }}>
-                <strong>Producto:</strong> {pedidoActivo.producto}
-              </Typography>
-            </Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3, maxWidth: 520 }}>
+            <Typography sx={{ fontSize: '0.92rem', color: 'var(--color-texto-oscuro)' }}>
+              <strong>Producto:</strong> {pedidoActivo.producto}
+            </Typography>
 
-            <Box>
-              <Typography sx={{ fontSize: '0.92rem', color: 'var(--color-texto-oscuro)' }}>
-                <strong>Método de pago:</strong> {pedidoActivo.metodoPago}
-              </Typography>
-            </Box>
+            <Typography sx={{ fontSize: '0.92rem', color: 'var(--color-texto-oscuro)' }}>
+              <strong>Fecha de transacción:</strong> {pedidoActivo.fechaEnvio}
+            </Typography>
 
-            <Box>
-              <Typography sx={{ fontSize: '0.92rem', color: 'var(--color-texto-oscuro)' }}>
-                <strong>Detalle del Pago:</strong> {pedidoActivo.detallePago}
-              </Typography>
-            </Box>
+            <Typography sx={{ fontSize: '0.92rem', color: 'var(--color-texto-oscuro)' }}>
+              <strong>Método de pago:</strong> {pedidoActivo.metodoPago}
+            </Typography>
 
-            <Box>
-              <Typography sx={{ fontSize: '1.05rem', color: 'var(--color-texto-oscuro)', fontWeight: 700 }}>
-                Total: ${formatCLP(pedidoActivo.total)}
+            <Typography sx={{ fontSize: '0.92rem', color: 'var(--color-texto-oscuro)' }}>
+              <strong>Detalle del Pago:</strong> {pedidoActivo.detallePago}
+            </Typography>
+
+            {/* Desglose tributario exigido en pauta */}
+            <Box
+              sx={{
+                p: 1.8,
+                bgcolor: 'var(--color-input-bg)',
+                border: '1px solid var(--color-borde)',
+                borderRadius: '8px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 0.6,
+              }}
+            >
+              <Typography sx={{ fontSize: '0.88rem', color: 'var(--color-texto-oscuro)' }}>
+                <strong>Valor Neto (sin IVA):</strong> ${formatCLP(valorNetoActivo)}
+              </Typography>
+              <Typography sx={{ fontSize: '0.88rem', color: 'var(--color-texto-oscuro)' }}>
+                <strong>IVA (19%):</strong> ${formatCLP(ivaActivo)}
+              </Typography>
+              <Typography sx={{ fontSize: '1.05rem', color: 'var(--color-primario)', fontWeight: 800, pt: 0.5, borderTop: '1px dashed var(--color-borde)' }}>
+                Total Cobrado: ${formatCLP(pedidoActivo.total)}
               </Typography>
             </Box>
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', maxWidth: 500, mt: 'auto' }}>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', maxWidth: 520, mt: 'auto' }}>
             <Box sx={{ flex: 1, minWidth: 160 }}>
               <CustomButton pill onClick={handleSolicitarDevolucion}>
                 Solicitar Devolución

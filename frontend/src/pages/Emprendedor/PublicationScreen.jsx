@@ -9,6 +9,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { useCrudFeedback } from '../../components/organisms/CrudFeedback/CrudFeedbackProvider';
 
 export default function PublicationsScreen({
   productos = [],
@@ -18,6 +19,7 @@ export default function PublicationsScreen({
   cartProps = {},
 }) {
   const navigate = useNavigate();
+  const { confirmarAccion, mostrarExito, mostrarError } = useCrudFeedback();
 
   const [tabActual, setTabActual] = useState('productos');
   const [modalOpen, setModalOpen] = useState(false);
@@ -25,10 +27,8 @@ export default function PublicationsScreen({
   const [offerModalOpen, setOfferModalOpen] = useState(false);
   const [productoOferta, setProductoOferta] = useState(null);
 
-  // Identificador de la empresa autenticada
   const miEmpresa = currentUser?.nombreEmpresa || currentUser?.name || 'Textiles del Sur SpA';
 
-  // FILTRO ESTRICTO: Solo las publicaciones de la empresa conectada
   const misPublicaciones = useMemo(() => {
     return productos.filter((p) => (p.vendedor || '').trim().toLowerCase() === miEmpresa.trim().toLowerCase());
   }, [productos, miEmpresa]);
@@ -52,20 +52,50 @@ export default function PublicationsScreen({
   };
 
   const handleGuardar = (form) => {
-    // Se asegura que la publicación quede asignada a la empresa actual
-    const formConVendedor = {
-      ...form,
-      vendedor: miEmpresa,
-    };
-    onEditarProducto(formConVendedor, productoEditar);
-    setModalOpen(false);
+    confirmarAccion({
+      titulo: productoEditar ? 'Confirmar Edición de Publicación' : 'Confirmar Nueva Publicación',
+      mensaje: productoEditar
+        ? `¿Deseas guardar los cambios en "${form.nombre}"?`
+        : `¿Deseas publicar "${form.nombre}" en el catálogo de ${miEmpresa}?`,
+      textoConfirmar: 'Guardar Publicación',
+      onConfirmar: () => {
+        try {
+          const formConVendedor = {
+            ...form,
+            vendedor: miEmpresa,
+          };
+          onEditarProducto(formConVendedor, productoEditar);
+          setModalOpen(false);
+          mostrarExito(
+            productoEditar
+              ? `Publicación "${form.nombre}" actualizada correctamente.`
+              : `Publicación "${form.nombre}" creada correctamente.`
+          );
+        } catch (err) {
+          mostrarError('No se pudo guardar la publicación.');
+        }
+      },
+    });
   };
 
   const handleEliminar = (producto) => {
-    if (onEliminarProducto) {
-      onEliminarProducto(producto);
-    }
-    setModalOpen(false);
+    confirmarAccion({
+      titulo: 'Confirmar Eliminación de Publicación',
+      mensaje: `¿Estás seguro de eliminar "${producto.nombre}" de tu catálogo?`,
+      textoConfirmar: 'Eliminar',
+      esDestructivo: true,
+      onConfirmar: () => {
+        try {
+          if (onEliminarProducto) {
+            onEliminarProducto(producto);
+          }
+          setModalOpen(false);
+          mostrarExito(`Publicación "${producto.nombre}" eliminada correctamente.`);
+        } catch (err) {
+          mostrarError('Error al eliminar la publicación.');
+        }
+      },
+    });
   };
 
   const handleOferta = (producto) => {
@@ -74,17 +104,28 @@ export default function PublicationsScreen({
   };
 
   const handleGuardarOferta = (ofertaData) => {
-    console.log('[BACKEND PENDIENTE] POST /api/emprendedor/ofertas', {
-      productoId: productoOferta?.id,
-      ...ofertaData,
+    confirmarAccion({
+      titulo: 'Confirmar Oferta Temporal',
+      mensaje: `¿Deseas aplicar esta oferta promocional sobre "${productoOferta?.nombre}"?`,
+      textoConfirmar: 'Aplicar Oferta',
+      onConfirmar: () => {
+        try {
+          console.log('[BACKEND PENDIENTE] POST /api/emprendedor/ofertas', {
+            productoId: productoOferta?.id,
+            ...ofertaData,
+          });
+          setOfferModalOpen(false);
+          mostrarExito(`Oferta aplicada correctamente a "${productoOferta?.nombre}".`);
+        } catch (err) {
+          mostrarError('No se pudo aplicar la oferta promocional.');
+        }
+      },
     });
-    setOfferModalOpen(false);
   };
 
   return (
     <MainLayout {...cartProps} currentUser={currentUser}>
       <Box sx={{ maxWidth: 900, mx: 'auto', p: { xs: 1.5, sm: 3 }, pb: 6 }}>
-        {/* Barra superior de navegación */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5, flexWrap: 'wrap', gap: 1.5 }}>
           <Button
             startIcon={<ArrowBackIcon />}
@@ -124,7 +165,6 @@ export default function PublicationsScreen({
           </Button>
         </Box>
 
-        {/* Resumen del Emprendedor */}
         <Box sx={{ mb: 2, p: 1.5, bgcolor: 'var(--color-input-bg)', borderRadius: '12px', border: '1px solid var(--color-borde)' }}>
           <Typography sx={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--color-texto-oscuro)' }}>
             Empresa: <strong style={{ color: 'var(--color-primario)' }}>{miEmpresa}</strong>
@@ -134,7 +174,6 @@ export default function PublicationsScreen({
           </Typography>
         </Box>
 
-        {/* Listado en modo vendedor (muestra botones Editar, Comentarios y Oferta) */}
         <CatalogList
           productos={misProductos}
           servicios={misServicios}
@@ -146,7 +185,6 @@ export default function PublicationsScreen({
           onComentarios={(item) => navigate(`/producto/${item.id}`)}
         />
 
-        {/* Modal de Crear / Editar Publicación */}
         <ProductFormModal
           open={modalOpen}
           onClose={() => setModalOpen(false)}
@@ -155,7 +193,6 @@ export default function PublicationsScreen({
           producto={productoEditar}
         />
 
-        {/* Modal de Oferta */}
         {offerModalOpen && (
           <OfferModal
             open={offerModalOpen}

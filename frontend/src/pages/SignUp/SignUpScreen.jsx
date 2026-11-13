@@ -48,7 +48,31 @@ function validarEmail(email) {
   return re.test(String(email).trim().toLowerCase());
 }
 
-export default function SignUpScreen({ onVolverLogin }) {
+function formatearFechaNacimiento(valor) {
+  const soloNumeros = valor.replace(/\D/g, '').slice(0, 8);
+  if (soloNumeros.length <= 2) return soloNumeros;
+  if (soloNumeros.length <= 4) return `${soloNumeros.slice(0, 2)}/${soloNumeros.slice(2)}`;
+  return `${soloNumeros.slice(0, 2)}/${soloNumeros.slice(2, 4)}/${soloNumeros.slice(4)}`;
+}
+
+function validarFechaNacimiento(fechaStr) {
+  if (!fechaStr || fechaStr.length !== 10) return { valida: false, mensaje: 'Ingrese su fecha de nacimiento (DD/MM/AAAA).' };
+  const [dia, mes, anio] = fechaStr.split('/').map(Number);
+  if (!dia || !mes || !anio || mes < 1 || mes > 12 || dia < 1 || dia > 31) {
+    return { valida: false, mensaje: 'La fecha de nacimiento ingresada no es válida.' };
+  }
+  const fechaNac = new Date(anio, mes - 1, dia);
+  const hoy = new Date();
+  if (fechaNac >= hoy) {
+    return { valida: false, mensaje: 'La fecha de nacimiento no puede ser futura.' };
+  }
+  if (anio < 1940) {
+    return { valida: false, mensaje: 'La fecha de nacimiento no puede ser anterior a 1940.' };
+  }
+  return { valida: true };
+}
+
+export default function SignUpScreen({ onVolverLogin, onUsuarioCreado }) {
   const [formData, setFormData] = useState({
     rut: '',
     email: '',
@@ -68,8 +92,6 @@ export default function SignUpScreen({ onVolverLogin }) {
 
   const [phoneModalOpen, setPhoneModalOpen] = useState(false);
   const [addressModalOpen, setAddressModalOpen] = useState(false);
-
-  // Viñeta de alerta visual
   const [alerta, setAlerta] = useState({ open: false, mensaje: '', tipo: 'error' });
 
   const handleUpdateFormData = (nuevoValor) => {
@@ -79,12 +101,18 @@ export default function SignUpScreen({ onVolverLogin }) {
         if (resultado.rut && resultado.rut !== prev.rut) {
           resultado.rut = formatearRut(resultado.rut);
         }
+        if (resultado.fechaNacimiento && resultado.fechaNacimiento !== prev.fechaNacimiento) {
+          resultado.fechaNacimiento = formatearFechaNacimiento(resultado.fechaNacimiento);
+        }
         return resultado;
       });
     } else {
       const dataActualizada = { ...nuevoValor };
       if (dataActualizada.rut) {
         dataActualizada.rut = formatearRut(dataActualizada.rut);
+      }
+      if (dataActualizada.fechaNacimiento) {
+        dataActualizada.fechaNacimiento = formatearFechaNacimiento(dataActualizada.fechaNacimiento);
       }
       setFormData(dataActualizada);
     }
@@ -100,7 +128,7 @@ export default function SignUpScreen({ onVolverLogin }) {
     setFormData((prev) => ({ ...prev, direcciones: [...prev.direcciones, direccion] }));
   };
 
-  const handleCrearCuenta = (e) => {
+  const handleCrearCuenta = async (e) => {
     e.preventDefault();
 
     // 1. Validar RUT
@@ -119,7 +147,14 @@ export default function SignUpScreen({ onVolverLogin }) {
       return;
     }
 
-    // 3. Validar Correo
+    // 3. Validar Fecha de Nacimiento
+    const checkFecha = validarFechaNacimiento(formData.fechaNacimiento);
+    if (!checkFecha.valida) {
+      setAlerta({ open: true, mensaje: checkFecha.mensaje, tipo: 'error' });
+      return;
+    }
+
+    // 4. Validar Correo
     if (!formData.email.trim()) {
       setAlerta({ open: true, mensaje: 'El correo electrónico es obligatorio.', tipo: 'error' });
       return;
@@ -129,7 +164,7 @@ export default function SignUpScreen({ onVolverLogin }) {
       return;
     }
 
-    // 4. Validar Contraseñas y Coincidencia estricta
+    // 5. Validar Contraseñas y Coincidencia estricta
     if (!formData.password || !formData.confirmPassword) {
       setAlerta({ open: true, mensaje: 'Debe ingresar y confirmar su contraseña.', tipo: 'error' });
       return;
@@ -147,16 +182,20 @@ export default function SignUpScreen({ onVolverLogin }) {
       return;
     }
 
-    // 5. Validar datos de empresa si corresponde
+    // 6. Validar datos de empresa si corresponde
     if (formData.soyEmpresa && !formData.nombreEmpresa.trim()) {
       setAlerta({ open: true, mensaje: 'Debe ingresar el nombre de su empresa.', tipo: 'error' });
       return;
     }
 
-    // Registro exitoso en memoria
+    // Propagar al estado global de App.jsx para hashear con Bcrypt
+    if (onUsuarioCreado) {
+      await onUsuarioCreado(formData);
+    }
+
     setAlerta({
       open: true,
-      mensaje: '¡Cuenta creada con éxito! Redirigiendo a inicio de sesión...',
+      mensaje: '¡Cuenta creada y protegida con Bcrypt! Redirigiendo a inicio de sesión...',
       tipo: 'success',
     });
 

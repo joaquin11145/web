@@ -9,7 +9,6 @@ import CartModal from '../../organisms/CartModal/CartModal';
 import QuotationModal from '../../organisms/QuotationModal/QuotationModal';
 import PaymentModal from '../../organisms/PaymentModal/PaymentModal';
 
-// Ajustado a 15 minutos de inactividad máxima (alineado con la reserva de compra)
 const TIEMPO_SESION_INACTIVA_MS = 15 * 60 * 1000;
 
 export default function MainLayout({
@@ -36,10 +35,12 @@ export default function MainLayout({
   const location = useLocation();
   const timeoutRef = useRef(null);
 
-  // Detección de panel actual
   const esModoEmprendedor = location.pathname.startsWith('/emprendedor');
+  const esAdmin =
+    currentUser?.rol === 'admin' ||
+    (currentUser?.rut || '').replace(/[^0-9kK]/g, '') === '999999999';
+  const puedeSerEmprendedor = Boolean(currentUser?.soyEmpresa) || esAdmin;
 
-  // Control de expiración de sesión por inactividad
   const handleCerrarSesionInactiva = useCallback(() => {
     setAlertaInactividad(true);
     setTimeout(() => {
@@ -95,7 +96,13 @@ export default function MainLayout({
         navigate('/perfil');
         break;
       case 'Modo Emprendedor':
-        if (currentUser?.soyEmpresa) navigate('/emprendedor');
+      case 'Volver a Emprendedor':
+        if (puedeSerEmprendedor) navigate('/emprendedor');
+        break;
+      case 'Modo Administrador':
+      case 'Administrar Panel':
+      case 'Administrar':
+        if (esAdmin) navigate('/admin');
         break;
       case 'Pedidos Recibidos':
         navigate('/emprendedor');
@@ -114,13 +121,6 @@ export default function MainLayout({
       case 'Volver a Comprador':
         navigate('/comprador');
         break;
-      case 'Volver a Emprendedor':
-        if (currentUser?.soyEmpresa) navigate('/emprendedor');
-        break;
-      case 'Administrar Panel':
-      case 'Administrar':
-        navigate('/admin');
-        break;
       default:
         navigate('/comprador');
         break;
@@ -132,8 +132,11 @@ export default function MainLayout({
       case 'Perfil':
         navigate('/perfil');
         break;
+      case 'Modo Administrador':
+        if (esAdmin) navigate('/admin');
+        break;
       case 'Modo Emprendedor':
-        if (currentUser?.soyEmpresa) navigate('/emprendedor');
+        if (puedeSerEmprendedor) navigate('/emprendedor');
         break;
       case 'Modo Comprador':
         navigate('/comprador');
@@ -211,7 +214,6 @@ export default function MainLayout({
         )}
       />
 
-      {/* Notificación de sesión expirada */}
       <Snackbar
         open={alertaInactividad}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}

@@ -11,6 +11,7 @@ import Collapse from '@mui/material/Collapse';
 
 import MainLayout from '../../components/templates/MainLayout/MainLayout';
 import { hashPassword, verifyPassword } from '../../utils/security';
+import { useCrudFeedback } from '../../components/organisms/CrudFeedback/CrudFeedbackProvider';
 
 function formatearRut(valor) {
   if (!valor) return '';
@@ -93,12 +94,12 @@ const perfilInicial = {
 
 export default function PerfilScreen({ cartProps = {}, onActualizarPassword }) {
   const currentUser = cartProps?.currentUser;
+  const { confirmarAccion, mostrarExito, mostrarError } = useCrudFeedback();
 
   const [perfil, setPerfil] = useState(perfilInicial);
   const [formData, setFormData] = useState(perfilInicial);
   const [editando, setEditando] = useState(false);
 
-  // Sincronizar datos respetando siempre el último passwordHash modificado
   useEffect(() => {
     if (currentUser) {
       setPerfil((prev) => {
@@ -135,7 +136,6 @@ export default function PerfilScreen({ cartProps = {}, onActualizarPassword }) {
   const [nuevaPass, setNuevaPass] = useState('');
   const [confirmarPass, setConfirmarPass] = useState('');
   const [errorPass, setErrorPass] = useState('');
-  const [mensajeExitoPass, setMensajeExitoPass] = useState('');
 
   // Editar Teléfono
   const [nuevoTel, setNuevoTel] = useState('');
@@ -155,7 +155,6 @@ export default function PerfilScreen({ cartProps = {}, onActualizarPassword }) {
   });
   const [errorDir, setErrorDir] = useState('');
 
-  // Alerta de formulario principal
   const [alertaPrincipal, setAlertaPrincipal] = useState({ open: false, mensaje: '', tipo: 'error' });
 
   const handleChange = (campo) => (e) => {
@@ -173,18 +172,15 @@ export default function PerfilScreen({ cartProps = {}, onActualizarPassword }) {
     if (alertaPrincipal.open) setAlertaPrincipal({ open: false, mensaje: '', tipo: 'error' });
   };
 
-  // Comparador estricto contra el hash almacenado en memoria
   const validarPasswordUsuario = async (passwordPlana, hashAlmacenado) => {
     if (!passwordPlana || !hashAlmacenado) return false;
     try {
       return await verifyPassword(passwordPlana, hashAlmacenado);
     } catch (e) {
-      console.warn('Error verificando hash con bcrypt:', e);
       return false;
     }
   };
 
-  // Validar credenciales con Bcrypt para ingresar a la edición de datos
   const handleValidarCredenciales = async (e) => {
     e.preventDefault();
     setErrorCred('');
@@ -211,7 +207,6 @@ export default function PerfilScreen({ cartProps = {}, onActualizarPassword }) {
     }
   };
 
-  // Validar credenciales con Bcrypt para autorizar el cambio de contraseña
   const handleValidarCredencialesPassword = async (e) => {
     e.preventDefault();
     setErrorCred('');
@@ -234,41 +229,52 @@ export default function PerfilScreen({ cartProps = {}, onActualizarPassword }) {
     }
   };
 
-  // Hashear y guardar la nueva contraseña con bcrypt
   const handleGuardarNuevaPassword = async (e) => {
     e.preventDefault();
     setErrorPass('');
 
     if (!nuevaPass.trim() || nuevaPass.length < 4) {
       setErrorPass('La contraseña debe tener al menos 4 caracteres.');
+      mostrarError('La nueva contraseña debe tener al menos 4 caracteres.');
       return;
     }
     if (nuevaPass !== confirmarPass) {
       setErrorPass('La confirmación de la contraseña no coincide con la contraseña ingresada.');
+      mostrarError('Las contraseñas ingresadas no coinciden.');
       return;
     }
 
-    const nuevoPasswordHash = await hashPassword(nuevaPass);
+    confirmarAccion({
+      titulo: 'Confirmar Cambio de Contraseña',
+      mensaje: '¿Estás seguro de reemplazar tu contraseña actual por la nueva clave cifrada?',
+      textoConfirmar: 'Cambiar Contraseña',
+      onConfirmar: async () => {
+        try {
+          const nuevoPasswordHash = await hashPassword(nuevaPass);
 
-    console.log('[BACKEND PENDIENTE] PATCH /api/usuarios/perfil/password (Hash generado con Bcrypt):', {
-      rut: perfil.rut,
-      nuevoHash: nuevoPasswordHash,
+          console.log('[BACKEND PENDIENTE] PATCH /api/usuarios/perfil/password (Hash generado con Bcrypt):', {
+            rut: perfil.rut,
+            nuevoHash: nuevoPasswordHash,
+          });
+
+          setPerfil((prev) => ({ ...prev, passwordHash: nuevoPasswordHash }));
+
+          if (onActualizarPassword) {
+            onActualizarPassword(perfil.rut, nuevoPasswordHash);
+          }
+
+          setNuevaPass('');
+          setConfirmarPass('');
+          setErrorPass('');
+          setCredRut('');
+          setCredPassword('');
+          setModalPasswordOpen(false);
+          mostrarExito('Contraseña actualizada y cifrada con Bcrypt correctamente.');
+        } catch (err) {
+          mostrarError('Error al actualizar la contraseña.');
+        }
+      },
     });
-
-    setPerfil((prev) => ({ ...prev, passwordHash: nuevoPasswordHash }));
-
-    if (onActualizarPassword) {
-      onActualizarPassword(perfil.rut, nuevoPasswordHash);
-    }
-
-    setNuevaPass('');
-    setConfirmarPass('');
-    setErrorPass('');
-    setCredRut('');
-    setCredPassword('');
-    setModalPasswordOpen(false);
-    setMensajeExitoPass('Contraseña actualizada y hasheada correctamente con Bcrypt.');
-    setTimeout(() => setMensajeExitoPass(''), 4000);
   };
 
   const handleGuardarDatos = (e) => {
@@ -276,21 +282,36 @@ export default function PerfilScreen({ cartProps = {}, onActualizarPassword }) {
 
     if (!formData.nombres.trim() || !formData.apellidos.trim()) {
       setAlertaPrincipal({ open: true, mensaje: 'Nombres y apellidos son obligatorios.', tipo: 'error' });
+      mostrarError('Nombres y apellidos son obligatorios.');
       return;
     }
 
     if (!validarRut(formData.rut)) {
       setAlertaPrincipal({ open: true, mensaje: 'El RUT ingresado no es válido.', tipo: 'error' });
+      mostrarError('El RUT ingresado no es válido.');
       return;
     }
 
     if (!formData.correo.trim()) {
       setAlertaPrincipal({ open: true, mensaje: 'El correo electrónico es obligatorio.', tipo: 'error' });
+      mostrarError('El correo electrónico es obligatorio.');
       return;
     }
 
-    setPerfil(formData);
-    setEditando(false);
+    confirmarAccion({
+      titulo: 'Confirmar Actualización de Perfil',
+      mensaje: '¿Deseas guardar los cambios realizados en tus datos personales?',
+      textoConfirmar: 'Guardar Cambios',
+      onConfirmar: () => {
+        try {
+          setPerfil(formData);
+          setEditando(false);
+          mostrarExito('Datos de perfil actualizados correctamente.');
+        } catch (err) {
+          mostrarError('No se pudieron guardar los datos del perfil.');
+        }
+      },
+    });
   };
 
   const handleCancelarEdicion = () => {
@@ -299,74 +320,112 @@ export default function PerfilScreen({ cartProps = {}, onActualizarPassword }) {
     setAlertaPrincipal({ open: false, mensaje: '', tipo: 'error' });
   };
 
-  // Manejo de Teléfonos
+  // Manejo de Teléfonos con Confirmación y Feedback
   const handleAgregarTelefono = (e) => {
     if (e) e.preventDefault();
     const soloNumeros = nuevoTel.replace(/\D/g, '');
 
     if (soloNumeros.length < 9) {
       setErrorTel('Ingrese un teléfono válido de 9 dígitos (+56 9 XXXX XXXX).');
+      mostrarError('Número de teléfono incompleto.');
       return;
     }
 
-    const actualizados = [...formData.telefonos, nuevoTel.trim()];
-    setFormData((prev) => ({ ...prev, telefonos: actualizados }));
-    setPerfil((prev) => ({ ...prev, telefonos: actualizados }));
-    setNuevoTel('');
-    setErrorTel('');
+    confirmarAccion({
+      titulo: 'Confirmar Nuevo Teléfono',
+      mensaje: `¿Deseas agregar el teléfono ${nuevoTel.trim()} a tu perfil?`,
+      textoConfirmar: 'Agregar',
+      onConfirmar: () => {
+        const actualizados = [...formData.telefonos, nuevoTel.trim()];
+        setFormData((prev) => ({ ...prev, telefonos: actualizados }));
+        setPerfil((prev) => ({ ...prev, telefonos: actualizados }));
+        setNuevoTel('');
+        setErrorTel('');
+        mostrarExito('Teléfono agregado correctamente.');
+      },
+    });
   };
 
   const handleEliminarTelefono = () => {
     if (!telSeleccionado) return;
-    const actualizados = formData.telefonos.filter((t) => t !== telSeleccionado);
-    setFormData((prev) => ({ ...prev, telefonos: actualizados }));
-    setPerfil((prev) => ({ ...prev, telefonos: actualizados }));
-    setTelSeleccionado(null);
+    confirmarAccion({
+      titulo: 'Confirmar Eliminación de Teléfono',
+      mensaje: `¿Estás seguro de eliminar el teléfono ${telSeleccionado}?`,
+      textoConfirmar: 'Eliminar',
+      esDestructivo: true,
+      onConfirmar: () => {
+        const actualizados = formData.telefonos.filter((t) => t !== telSeleccionado);
+        setFormData((prev) => ({ ...prev, telefonos: actualizados }));
+        setPerfil((prev) => ({ ...prev, telefonos: actualizados }));
+        setTelSeleccionado(null);
+        mostrarExito('Teléfono eliminado correctamente.');
+      },
+    });
   };
 
-  // Manejo de Direcciones
+  // Manejo de Direcciones con Confirmación y Feedback
   const handleAgregarDireccion = (e) => {
     if (e) e.preventDefault();
 
     if (!nuevaDir.direccion.trim()) {
       setErrorDir('Ingrese el nombre de la dirección / calle.');
+      mostrarError('Falta ingresar la calle o dirección.');
       return;
     }
     if (!nuevaDir.numero.trim()) {
       setErrorDir('Ingrese el número de la dirección (solo dígitos).');
+      mostrarError('Falta ingresar el número de domicilio.');
       return;
     }
     if (!nuevaDir.comuna.trim()) {
       setErrorDir('Ingrese la comuna.');
+      mostrarError('Falta ingresar la comuna.');
       return;
     }
 
-    const item = {
-      ...nuevaDir,
-      tipo: tipoInmueble,
-      id: Date.now(),
-    };
+    confirmarAccion({
+      titulo: 'Confirmar Nueva Dirección',
+      mensaje: `¿Deseas registrar la dirección "${nuevaDir.direccion} #${nuevaDir.numero}, ${nuevaDir.comuna}"?`,
+      textoConfirmar: 'Agregar Dirección',
+      onConfirmar: () => {
+        const item = {
+          ...nuevaDir,
+          tipo: tipoInmueble,
+          id: Date.now(),
+        };
 
-    const actualizadas = [...formData.direcciones, item];
-    setFormData((prev) => ({ ...prev, direcciones: actualizadas }));
-    setPerfil((prev) => ({ ...prev, direcciones: actualizadas }));
-    setNuevaDir({
-      region: '',
-      provincia: '',
-      comuna: '',
-      codigoPostal: '',
-      direccion: '',
-      numero: '',
+        const actualizadas = [...formData.direcciones, item];
+        setFormData((prev) => ({ ...prev, direcciones: actualizadas }));
+        setPerfil((prev) => ({ ...prev, direcciones: actualizadas }));
+        setNuevaDir({
+          region: '',
+          provincia: '',
+          comuna: '',
+          codigoPostal: '',
+          direccion: '',
+          numero: '',
+        });
+        setErrorDir('');
+        mostrarExito('Dirección agregada correctamente.');
+      },
     });
-    setErrorDir('');
   };
 
   const handleEliminarDireccion = () => {
     if (!dirSeleccionada) return;
-    const actualizadas = formData.direcciones.filter((d) => d.id !== dirSeleccionada.id);
-    setFormData((prev) => ({ ...prev, direcciones: actualizadas }));
-    setPerfil((prev) => ({ ...prev, direcciones: actualizadas }));
-    setDirSeleccionada(null);
+    confirmarAccion({
+      titulo: 'Confirmar Eliminación de Dirección',
+      mensaje: `¿Estás seguro de eliminar la dirección "${dirSeleccionada.direccion} #${dirSeleccionada.numero}"?`,
+      textoConfirmar: 'Eliminar',
+      esDestructivo: true,
+      onConfirmar: () => {
+        const actualizadas = formData.direcciones.filter((d) => d.id !== dirSeleccionada.id);
+        setFormData((prev) => ({ ...prev, direcciones: actualizadas }));
+        setPerfil((prev) => ({ ...prev, direcciones: actualizadas }));
+        setDirSeleccionada(null);
+        mostrarExito('Dirección eliminada correctamente.');
+      },
+    });
   };
 
   return (
@@ -393,12 +452,6 @@ export default function PerfilScreen({ cartProps = {}, onActualizarPassword }) {
             {editando ? 'Edite sus Datos' : 'Mi Perfil'}
           </Typography>
 
-          <Collapse in={Boolean(mensajeExitoPass)} sx={{ mb: 2 }}>
-            <Alert severity="success" sx={{ borderRadius: '8px', fontSize: '0.88rem' }}>
-              {mensajeExitoPass}
-            </Alert>
-          </Collapse>
-
           <Collapse in={alertaPrincipal.open} sx={{ mb: 2 }}>
             <Alert severity={alertaPrincipal.tipo} sx={{ borderRadius: '8px', fontSize: '0.88rem' }}>
               {alertaPrincipal.mensaje}
@@ -406,7 +459,6 @@ export default function PerfilScreen({ cartProps = {}, onActualizarPassword }) {
           </Collapse>
 
           {!editando ? (
-            /* ================= VISTA: VER PERFIL ================= */
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
               <Box
                 sx={{
@@ -468,7 +520,6 @@ export default function PerfilScreen({ cartProps = {}, onActualizarPassword }) {
                 </Box>
               </Box>
 
-              {/* Botones de acción principales */}
               <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5, mt: 1 }}>
                 <Button
                   fullWidth
@@ -505,7 +556,6 @@ export default function PerfilScreen({ cartProps = {}, onActualizarPassword }) {
               </Box>
             </Box>
           ) : (
-            /* ================= VISTA: EDITE SUS DATOS ================= */
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2.5 }}>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -626,7 +676,7 @@ export default function PerfilScreen({ cartProps = {}, onActualizarPassword }) {
         </Box>
       </Box>
 
-      {/* ================= MODAL CREDENCIALES (PARA EDITAR PERFIL) ================= */}
+      {/* MODAL CREDENCIALES (EDITAR PERFIL) */}
       {modalCredencialesOpen && (
         <Box sx={modalBackdropStyle} onClick={() => setModalCredencialesOpen(false)}>
           <Box
@@ -691,7 +741,7 @@ export default function PerfilScreen({ cartProps = {}, onActualizarPassword }) {
         </Box>
       )}
 
-      {/* ================= MODAL CREDENCIALES (PASO 1 PARA CAMBIAR CONTRASEÑA) ================= */}
+      {/* MODAL CREDENCIALES (CAMBIAR CONTRASEÑA PASO 1) */}
       {modalPasswordOpen === 'credenciales' && (
         <Box sx={modalBackdropStyle} onClick={() => setModalPasswordOpen(false)}>
           <Box
@@ -770,7 +820,7 @@ export default function PerfilScreen({ cartProps = {}, onActualizarPassword }) {
         </Box>
       )}
 
-      {/* ================= MODAL INGRESO DE NUEVA CONTRASEÑA (PASO 2) ================= */}
+      {/* MODAL NUEVA CONTRASEÑA (PASO 2) */}
       {modalPasswordOpen === true && (
         <Box sx={modalBackdropStyle} onClick={() => setModalPasswordOpen(false)}>
           <Box
@@ -846,7 +896,7 @@ export default function PerfilScreen({ cartProps = {}, onActualizarPassword }) {
         </Box>
       )}
 
-      {/* ================= MODAL EDITE TELÉFONO ================= */}
+      {/* MODAL EDITE TELÉFONO */}
       {modalTelefonoOpen && (
         <Box sx={modalBackdropStyle} onClick={() => setModalTelefonoOpen(false)}>
           <Box
@@ -951,7 +1001,7 @@ export default function PerfilScreen({ cartProps = {}, onActualizarPassword }) {
         </Box>
       )}
 
-      {/* ================= MODAL EDITE DIRECCIÓN ================= */}
+      {/* MODAL EDITE DIRECCIÓN */}
       {modalDireccionOpen && (
         <Box sx={modalBackdropStyle} onClick={() => setModalDireccionOpen(false)}>
           <Box

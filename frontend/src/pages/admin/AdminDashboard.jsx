@@ -14,12 +14,13 @@ import Collapse from '@mui/material/Collapse';
 
 import CloseIcon from '@mui/icons-material/Close';
 import PersonAddAlt1OutlinedIcon from '@mui/icons-material/PersonAddAlt1Outlined';
+import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
 import MainLayout from '../../components/templates/MainLayout/MainLayout';
 import LoginField from '../../components/molecules/LoginField/LoginField';
 import CustomButton from '../../components/atoms/Button/CustomButton';
 import { hashPassword } from '../../utils/security';
 
-export default function AdminDashboard({ cartProps = {} }) {
+export default function AdminDashboard({ onCrearUsuarioAdmin, cartProps = {} }) {
   const navigate = useNavigate();
 
   const [openCrearAdmin, setOpenCrearAdmin] = useState(false);
@@ -53,7 +54,6 @@ export default function AdminDashboard({ cartProps = {} }) {
     setOpenCrearAdmin(false);
   };
 
-  // Creación con Bcrypt asíncrono
   const handleGuardarNuevoAdmin = async (e) => {
     if (e) e.preventDefault();
 
@@ -67,17 +67,19 @@ export default function AdminDashboard({ cartProps = {} }) {
       return;
     }
 
-    // Hasheo con salt de la contraseña temporal
     const passwordHashTemporal = await hashPassword(formAdmin.password);
 
     const payloadNuevoAdmin = {
       id: Date.now(),
       rut: formAdmin.rut,
+      name: formAdmin.nombre,
       nombre: formAdmin.nombre,
       email: formAdmin.email,
-      passwordHash: passwordHashTemporal, // Se guarda el hash seguro, nunca texto plano
+      passwordHash: passwordHashTemporal,
       rol: 'admin',
-      requiereCambioPassword: true, // Forzará el flujo de activación en el login
+      soyEmpresa: false,
+      nombreEmpresa: 'Administración Central',
+      requiereCambioPassword: true,
       fechaCreacion: new Date().toISOString(),
     };
 
@@ -87,6 +89,10 @@ export default function AdminDashboard({ cartProps = {} }) {
       email: payloadNuevoAdmin.email,
       passwordHash: payloadNuevoAdmin.passwordHash,
     });
+
+    if (onCrearUsuarioAdmin) {
+      onCrearUsuarioAdmin(payloadNuevoAdmin);
+    }
 
     try {
       const adminsExistentes = JSON.parse(sessionStorage.getItem('admins_temporales') || '[]');
@@ -128,7 +134,7 @@ export default function AdminDashboard({ cartProps = {} }) {
           Administrar
         </Typography>
 
-        {/* 4 Módulos principales */}
+        {/* Módulos principales */}
         <Box
           sx={{
             display: 'grid',
@@ -139,6 +145,16 @@ export default function AdminDashboard({ cartProps = {} }) {
             mb: 3,
           }}
         >
+          <Button
+            variant="contained"
+            disableElevation
+            startIcon={<PeopleAltOutlinedIcon />}
+            onClick={() => navigate('/admin/usuarios')}
+            sx={menuBotonStyle}
+          >
+            Todos los Usuarios (CRUD)
+          </Button>
+
           <Button
             variant="contained"
             disableElevation
@@ -170,13 +186,13 @@ export default function AdminDashboard({ cartProps = {} }) {
             variant="contained"
             disableElevation
             onClick={() => navigate('/admin/devoluciones')}
-            sx={menuBotonStyle}
+            sx={{ ...menuBotonStyle, gridColumn: { xs: 'auto', sm: '1 / -1' } }}
           >
             Devoluciones
           </Button>
         </Box>
 
-        {/* Botón en Naranja Terracota Oficial de Figma */}
+        {/* Botón Crear Nuevo Administrador */}
         <Box sx={{ width: '100%', maxWidth: 580 }}>
           <Button
             fullWidth

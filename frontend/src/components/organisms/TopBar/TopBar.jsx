@@ -20,6 +20,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import ShoppingBagOutlinedIcon from '@mui/icons-material/ShoppingBagOutlined';
+import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
 import LogoutIcon from '@mui/icons-material/Logout';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 
@@ -52,7 +53,10 @@ export default function TopBar({
 
   const esModoAdmin = location.pathname.startsWith('/admin');
   const esModoEmprendedor = location.pathname.startsWith('/emprendedor');
-  const esEmpresa = Boolean(currentUser?.soyEmpresa);
+  const esAdmin =
+    currentUser?.rol === 'admin' ||
+    (currentUser?.rut || '').replace(/[^0-9kK]/g, '') === '999999999';
+  const puedeSerEmprendedor = Boolean(currentUser?.soyEmpresa) || esAdmin;
 
   const rolActual = esModoAdmin ? 'admin' : esModoEmprendedor ? 'emprendedor' : 'comprador';
 
@@ -201,7 +205,7 @@ export default function TopBar({
           </Badge>
         </IconButton>
 
-        {/* POPOVER FLOTANTE DE ALERTAS (Diseño idéntico al Menú de Usuario) */}
+        {/* POPOVER FLOTANTE DE ALERTAS */}
         <Popover
           open={openNotif}
           anchorEl={anchorElNotif}
@@ -419,6 +423,29 @@ export default function TopBar({
 
               <Divider sx={{ borderColor: 'var(--color-borde)', my: 0.5 }} />
 
+              {/* Botón Modo Administrador visible cuando el usuario tiene rol admin */}
+              {esAdmin && (
+                <MenuItem
+                  onClick={() => handleOptionClick('Modo Administrador')}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.2,
+                    borderRadius: '10px',
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    color: 'var(--color-texto-oscuro)',
+                    py: 1,
+                    mx: 0.5,
+                    '&:hover': { color: 'var(--color-primario)' },
+                  }}
+                >
+                  <AdminPanelSettingsOutlinedIcon fontSize="small" sx={{ color: 'inherit' }} />
+                  Modo Administrador
+                </MenuItem>
+              )}
+
+              {/* Cambio entre Modo Emprendedor e Ingresar como Cliente */}
               {esModoEmprendedor ? (
                 <MenuItem
                   onClick={() => handleOptionClick('Modo Comprador')}
@@ -439,7 +466,7 @@ export default function TopBar({
                   Ingresar como Cliente
                 </MenuItem>
               ) : (
-                esEmpresa && (
+                puedeSerEmprendedor && (
                   <MenuItem
                     onClick={() => handleOptionClick('Modo Emprendedor')}
                     sx={{
@@ -461,7 +488,9 @@ export default function TopBar({
                 )
               )}
 
-              {esEmpresa && <Divider sx={{ borderColor: 'var(--color-borde)', my: 0.5 }} />}
+              {(puedeSerEmprendedor || esAdmin) && (
+                <Divider sx={{ borderColor: 'var(--color-borde)', my: 0.5 }} />
+              )}
 
               <MenuItem
                 onClick={() => handleOptionClick('Cerrar Sesión')}

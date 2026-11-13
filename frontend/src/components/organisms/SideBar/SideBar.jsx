@@ -22,6 +22,7 @@ import ListAltOutlinedIcon from '@mui/icons-material/ListAltOutlined';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import AssignmentReturnOutlinedIcon from '@mui/icons-material/AssignmentReturnOutlined';
 import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
+import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
 
 const categorias = [
   { nombre: 'Categoria 1', subcategorias: ['Subcategoria 1', 'Subcategoria 2', 'Subcategoria 3'] },
@@ -31,10 +32,13 @@ const categorias = [
   { nombre: 'Categoria 5', subcategorias: ['Subcategoria 10', 'Subcategoria 11'] },
 ];
 
-export default function Sidebar({ open, onClose, onNavigate }) {
+export default function Sidebar({ open, onClose, onNavigate, currentUser = {} }) {
   const location = useLocation();
   const esModoAdmin = location.pathname.startsWith('/admin');
   const esModoEmprendedor = location.pathname.startsWith('/emprendedor');
+  const esAdmin =
+    currentUser?.rol === 'admin' ||
+    (currentUser?.rut || '').replace(/[^0-9kK]/g, '') === '999999999';
 
   const [anchorEl, setAnchorEl] = useState(null);
   const [categoriaActiva, setCategoriaActiva] = useState(null);
@@ -64,6 +68,12 @@ export default function Sidebar({ open, onClose, onNavigate }) {
     { label: 'Tus Pedidos', icon: <ShoppingBagOutlinedIcon fontSize="small" /> },
     { label: 'Cotizaciones', icon: <RequestQuoteOutlinedIcon fontSize="small" /> },
     { label: 'Transacciones', icon: <ReceiptLongOutlinedIcon fontSize="small" /> },
+    ...(esAdmin
+      ? [
+          { label: 'Modo Emprendedor', icon: <StorefrontIcon fontSize="small" /> },
+          { label: 'Modo Administrador', icon: <AdminPanelSettingsOutlinedIcon fontSize="small" /> },
+        ]
+      : []),
   ];
 
   const opcionesEmprendedor = [
@@ -73,10 +83,14 @@ export default function Sidebar({ open, onClose, onNavigate }) {
     { label: 'Publicaciones', icon: <ListAltOutlinedIcon fontSize="small" /> },
     { label: 'Administrar Stock', icon: <Inventory2OutlinedIcon fontSize="small" /> },
     { label: 'Ingresar como cliente', icon: <StorefrontIcon fontSize="small" /> },
+    ...(esAdmin
+      ? [{ label: 'Modo Administrador', icon: <AdminPanelSettingsOutlinedIcon fontSize="small" /> }]
+      : []),
   ];
 
   const opcionesAdmin = [
     { label: 'Administrar Panel', icon: <AdminPanelSettingsOutlinedIcon fontSize="small" /> },
+    { label: 'Todos los Usuarios (CRUD)', icon: <PeopleAltOutlinedIcon fontSize="small" /> },
     { label: 'Volver a Comprador', icon: <StorefrontIcon fontSize="small" /> },
     { label: 'Volver a Emprendedor', icon: <StorefrontIcon fontSize="small" /> },
   ];
@@ -102,7 +116,7 @@ export default function Sidebar({ open, onClose, onNavigate }) {
             my: { xs: 1, sm: 2 },
             ml: { xs: 1, sm: 2 },
             height: { xs: 'calc(100vh - 16px)', sm: 'calc(100vh - 32px)' },
-            borderRadius: '24px', // Esquinas redondeadas estilo tarjeta flotante
+            borderRadius: '24px',
             border: '1.5px solid var(--color-texto-oscuro)',
             bgcolor: 'var(--color-fondo)',
             boxShadow: '0 12px 36px rgba(44, 44, 42, 0.22)',
@@ -124,7 +138,6 @@ export default function Sidebar({ open, onClose, onNavigate }) {
         role="presentation"
         onMouseLeave={handleCloseSubmenu}
       >
-        {/* Cabecera del Sidebar */}
         <Box sx={{ px: 1, py: 1, mb: 1 }}>
           <Typography
             sx={{
@@ -144,14 +157,13 @@ export default function Sidebar({ open, onClose, onNavigate }) {
 
         <Divider sx={{ borderColor: 'var(--color-borde)', mb: 1.5 }} />
 
-        {/* Opciones directas según el rol */}
         <List disablePadding sx={{ display: 'flex', flexDirection: 'column', gap: 0.6 }}>
           {opcionesActuales.map((item) => (
             <ListItemButton
               key={item.label}
               onClick={() => handleItemClick(item.label)}
               sx={{
-                borderRadius: '14px', // Ítems redondeados estilo píldora
+                borderRadius: '14px',
                 py: 1,
                 px: 1.6,
                 color: 'var(--color-texto-oscuro)',
@@ -174,7 +186,6 @@ export default function Sidebar({ open, onClose, onNavigate }) {
           ))}
         </List>
 
-        {/* Categorías del catálogo solo para Comprador */}
         {!esModoEmprendedor && !esModoAdmin && (
           <>
             <Divider sx={{ borderColor: 'var(--color-borde)', my: 2 }} />
@@ -230,7 +241,6 @@ export default function Sidebar({ open, onClose, onNavigate }) {
           </>
         )}
 
-        {/* Submenú Flotante Redondeado tipo Figma */}
         <Popper
           open={Boolean(anchorEl && categoriaActiva)}
           anchorEl={anchorEl}
@@ -240,7 +250,7 @@ export default function Sidebar({ open, onClose, onNavigate }) {
             {
               name: 'offset',
               options: {
-                offset: [0, 10], // Separación visual suave respecto al sidebar
+                offset: [0, 10],
               },
             },
           ]}
@@ -254,7 +264,7 @@ export default function Sidebar({ open, onClose, onNavigate }) {
                 onMouseLeave={handleCloseSubmenu}
                 sx={{
                   minWidth: 230,
-                  borderRadius: '20px', // Redondeado coordinado con el drawer
+                  borderRadius: '20px',
                   border: '1.5px solid var(--color-texto-oscuro)',
                   bgcolor: 'var(--color-fondo)',
                   p: 1.6,

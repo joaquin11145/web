@@ -8,12 +8,14 @@ import MenuItem from '@mui/material/MenuItem';
 import Chip from '@mui/material/Chip';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import MainLayout from '../../components/templates/MainLayout/MainLayout';
-import { chileData, getComunasDeRegion, todasLasRegiones } from '../../data/chileData';
+import { getComunasDeRegion, todasLasRegiones } from '../../data/chileData';
+import { useCrudFeedback } from '../../components/organisms/CrudFeedback/CrudFeedbackProvider';
 
 export default function ZonaFormScreen({ zonas = [], onGuardarZona, cartProps = {} }) {
   const navigate = useNavigate();
   const { id } = useParams();
   const esEdicion = Boolean(id);
+  const { confirmarAccion, mostrarExito, mostrarError } = useCrudFeedback();
 
   const [form, setForm] = useState({
     nombre: '',
@@ -55,7 +57,6 @@ export default function ZonaFormScreen({ zonas = [], onGuardarZona, cartProps = 
     setForm({
       ...form,
       region: nuevaRegion,
-      // Al cambiar de región, selecciona las primeras 3 por defecto
       comunas: comunasDisponibles.slice(0, 3),
     });
   };
@@ -81,14 +82,41 @@ export default function ZonaFormScreen({ zonas = [], onGuardarZona, cartProps = 
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (onGuardarZona) {
-      onGuardarZona({
-        ...form,
-        id: esEdicion ? Number(id) : Date.now(),
-        ciudad: form.comunas[0] || 'Zona',
-      });
+    if (!form.nombre.trim()) {
+      mostrarError('Debe ingresar un nombre para la zona de envío.');
+      return;
     }
-    navigate('/admin/transporte');
+    if (form.comunas.length === 0) {
+      mostrarError('Debe seleccionar al menos una comuna para la zona.');
+      return;
+    }
+
+    confirmarAccion({
+      titulo: esEdicion ? 'Confirmar Actualización de Zona' : 'Confirmar Creación de Zona',
+      mensaje: esEdicion
+        ? `¿Deseas guardar los cambios realizados en la zona "${form.nombre}"?`
+        : `¿Deseas registrar la nueva zona de envío "${form.nombre}" en ${form.region}?`,
+      textoConfirmar: 'Guardar Zona',
+      onConfirmar: () => {
+        try {
+          if (onGuardarZona) {
+            onGuardarZona({
+              ...form,
+              id: esEdicion ? Number(id) : Date.now(),
+              ciudad: form.comunas[0] || 'Zona',
+            });
+          }
+          mostrarExito(
+            esEdicion
+              ? `Zona "${form.nombre}" actualizada correctamente.`
+              : `Zona "${form.nombre}" creada correctamente.`
+          );
+          navigate('/admin/transporte');
+        } catch (err) {
+          mostrarError('Error al guardar la zona de transporte.');
+        }
+      },
+    });
   };
 
   const comunasDeLaRegionActual = getComunasDeRegion(form.region);
@@ -106,6 +134,7 @@ export default function ZonaFormScreen({ zonas = [], onGuardarZona, cartProps = 
 
         <Box
           component="form"
+          noValidate
           onSubmit={handleSubmit}
           sx={{
             display: 'flex',
@@ -135,7 +164,6 @@ export default function ZonaFormScreen({ zonas = [], onGuardarZona, cartProps = 
             />
           </Box>
 
-          {/* Selector de Región con todas las 16 regiones de Chile */}
           <Box>
             <Typography sx={labelFormStyle}>Región de Chile</Typography>
             <TextField
@@ -154,7 +182,6 @@ export default function ZonaFormScreen({ zonas = [], onGuardarZona, cartProps = 
             </TextField>
           </Box>
 
-          {/* Comunas accesibles de la región seleccionada */}
           <Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.8, flexWrap: 'wrap', gap: 1 }}>
               <Typography sx={labelFormStyle}>
@@ -305,7 +332,6 @@ export default function ZonaFormScreen({ zonas = [], onGuardarZona, cartProps = 
             </Button>
           </Box>
 
-          {/* Simulador de dimensiones */}
           <Box
             sx={{
               border: '1.2px solid var(--color-texto-oscuro)',

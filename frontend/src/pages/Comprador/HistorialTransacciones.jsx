@@ -3,14 +3,18 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import MainLayout from '../../components/templates/MainLayout/MainLayout';
+import CustomButton from '../../components/atoms/Button/CustomButton';
+import { generarHistorialTransaccionalPDF } from '../../utils/pdfGenerator';
 
 const transaccionesIniciales = [
   {
     id: 1,
     nombre: 'Transacción 1',
+    fecha: '12/09/2026',
     estado: 'Completada',
     tipo: 'Compra de producto',
     metodoPago: 'Débito / Crédito',
@@ -20,6 +24,7 @@ const transaccionesIniciales = [
   {
     id: 2,
     nombre: 'Transacción 2',
+    fecha: '20/09/2026',
     estado: 'Completada',
     tipo: 'Compra de producto',
     metodoPago: 'Transferencia Bancaria',
@@ -29,6 +34,7 @@ const transaccionesIniciales = [
   {
     id: 3,
     nombre: 'Transacción 3',
+    fecha: '05/10/2026',
     estado: 'Pendiente',
     tipo: 'Cotización aceptada',
     metodoPago: 'Débito / Crédito',
@@ -38,11 +44,23 @@ const transaccionesIniciales = [
   {
     id: 4,
     nombre: 'Transacción 4',
+    fecha: '18/10/2026',
     estado: 'Completada',
     tipo: 'Compra de servicio',
     metodoPago: 'Transferencia Bancaria',
     detallePago: 'Comprobante TRX-541209 verificado',
     total: 10000,
+  },
+];
+
+const devolucionesAprobadasMock = [
+  {
+    id: 101,
+    cliente: 'Juan Pérez (11.111.111-1)',
+    producto: 'Polera Deportiva Roja (Talla S)',
+    motivo: 'Talla no corresponde a la tabla publicada',
+    estado: 'Aprobada',
+    montoReintegrado: 12000,
   },
 ];
 
@@ -63,6 +81,10 @@ export default function HistorialTransacciones({ cartProps = {} }) {
 
   const handleVolverALista = () => {
     setVistaMovil('lista');
+  };
+
+  const handleExportarHistorialPDF = () => {
+    generarHistorialTransaccionalPDF(transacciones, devolucionesAprobadasMock, cartProps?.currentUser);
   };
 
   const formatCLP = (monto) => Number(monto || 0).toLocaleString('es-CL');
@@ -150,13 +172,16 @@ export default function HistorialTransacciones({ cartProps = {} }) {
                   >
                     {t.nombre}
                   </Typography>
+                  <Typography variant="caption" sx={{ color: 'var(--color-borde)', display: 'block' }}>
+                    {t.fecha} • {t.estado}
+                  </Typography>
                 </Box>
               );
             })}
           </Box>
         </Box>
 
-        {/* Columna Derecha: Detalle de la Transacción */}
+        {/* Columna Derecha: Detalle de la Transacción + Exportación Reporte Operativo */}
         <Box
           sx={{
             flex: 1,
@@ -172,51 +197,65 @@ export default function HistorialTransacciones({ cartProps = {} }) {
             boxSizing: 'border-box',
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            {esMovil && (
-              <IconButton
-                size="small"
-                onClick={handleVolverALista}
-                sx={{ color: 'var(--color-primario)', mr: 0.5 }}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {esMovil && (
+                <IconButton
+                  size="small"
+                  onClick={handleVolverALista}
+                  sx={{ color: 'var(--color-primario)', mr: 0.5 }}
+                >
+                  <ArrowBackIcon />
+                </IconButton>
+              )}
+              <Typography
+                sx={{
+                  fontWeight: 700,
+                  fontSize: '1.4rem',
+                  color: 'var(--color-texto-oscuro)',
+                }}
               >
-                <ArrowBackIcon />
-              </IconButton>
-            )}
-            <Typography
-              sx={{
-                fontWeight: 700,
-                fontSize: '1.4rem',
-                color: 'var(--color-texto-oscuro)',
-              }}
-            >
-              Transacción
-            </Typography>
+                Detalle Transacción
+              </Typography>
+            </Box>
+
+            <Box sx={{ minWidth: 230 }}>
+              <CustomButton
+                pill
+                outlined
+                onClick={handleExportarHistorialPDF}
+                sx={{
+                  borderColor: 'var(--color-primario)',
+                  color: 'var(--color-primario)',
+                  fontSize: '0.84rem',
+                }}
+              >
+                <PictureAsPdfIcon sx={{ fontSize: 18, mr: 0.8 }} />
+                Reporte Operativo PDF
+              </CustomButton>
+            </Box>
           </Box>
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.2, maxWidth: 540 }}>
-            <Box>
-              <Typography sx={{ fontSize: '0.95rem', color: 'var(--color-texto-oscuro)' }}>
-                <strong>Estado:</strong> {transaccionActiva.estado}
-              </Typography>
-            </Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 540 }}>
+            <Typography sx={{ fontSize: '0.95rem', color: 'var(--color-texto-oscuro)' }}>
+              <strong>Fecha:</strong> {transaccionActiva.fecha}
+            </Typography>
 
-            <Box>
-              <Typography sx={{ fontSize: '0.95rem', color: 'var(--color-texto-oscuro)' }}>
-                <strong>Tipo:</strong> {transaccionActiva.tipo}
-              </Typography>
-            </Box>
+            <Typography sx={{ fontSize: '0.95rem', color: 'var(--color-texto-oscuro)' }}>
+              <strong>Estado:</strong> {transaccionActiva.estado}
+            </Typography>
 
-            <Box>
-              <Typography sx={{ fontSize: '0.95rem', color: 'var(--color-texto-oscuro)' }}>
-                <strong>Método de pago:</strong> {transaccionActiva.metodoPago}
-              </Typography>
-            </Box>
+            <Typography sx={{ fontSize: '0.95rem', color: 'var(--color-texto-oscuro)' }}>
+              <strong>Tipo:</strong> {transaccionActiva.tipo}
+            </Typography>
 
-            <Box>
-              <Typography sx={{ fontSize: '0.95rem', color: 'var(--color-texto-oscuro)' }}>
-                <strong>Detalle del Pago:</strong> {transaccionActiva.detallePago}
-              </Typography>
-            </Box>
+            <Typography sx={{ fontSize: '0.95rem', color: 'var(--color-texto-oscuro)' }}>
+              <strong>Método de pago:</strong> {transaccionActiva.metodoPago}
+            </Typography>
+
+            <Typography sx={{ fontSize: '0.95rem', color: 'var(--color-texto-oscuro)' }}>
+              <strong>Detalle del Pago:</strong> {transaccionActiva.detallePago}
+            </Typography>
 
             <Box sx={{ mt: 1 }}>
               <Typography
