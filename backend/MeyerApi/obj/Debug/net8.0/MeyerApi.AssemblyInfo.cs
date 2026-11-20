@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MeyerApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+564207fcefd256aeecb94bcbce16ec5c90b14965")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1f9cfe80ee1919adbb774e805d52a358645a6039")]
 [assembly: System.Reflection.AssemblyProductAttribute("MeyerApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MeyerApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
